@@ -41,9 +41,9 @@ function setSize(e) {
       <span class="show-label">Show</span>
       <div class="select-wrap">
         <select :value="pageSize" class="size-select" @change="setSize">
-          <option :value="10">10</option>
-          <option :value="25">25</option>
+          <option :value="8">8</option>
           <option :value="50">50</option>
+          <option :value="100">100</option>
         </select>
         <svg class="select-arrow" width="10" height="10" viewBox="0 0 12 12" fill="none">
           <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
