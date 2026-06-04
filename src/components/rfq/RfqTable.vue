@@ -132,9 +132,9 @@ td {
 .data-row:hover td { background: rgba(56,163,245,0.08); }
 .data-row:last-child td { border-bottom: none; }
 .cell-center { text-align: center; }
-.cell-small { font-size: 11.5px; color: rgba(255,255,255,0.55); }
-.cell-muted { color: rgba(255,255,255,0.4); white-space: pre-line; }
-.cell-mono { font-family: "DM Mono", monospace; font-size: 11.5px; color: rgba(255,255,255,0.6); }
+.cell-small { font-size: 11.5px; color: rgba(255,255,255,0.86); }
+.cell-muted { color: rgba(255,255,255,0.86); white-space: pre-line; }
+.cell-mono { font-family: "DM Mono", monospace; font-size: 11.5px; color: rgba(255,255,255,0.86); }
 .rfq-link { color: #38a3f5; font-weight: 500; cursor: pointer; text-decoration: none; transition: color 0.2s; }
 .rfq-link:hover { color: #7ec8f5; text-decoration: underline; }
 .status-badge {

@@ -3,15 +3,16 @@ import { computed, ref } from "vue";
 import AppLayout from "../../layouts/AppLayout.vue";
 import CategoryCard from "../../components/help/CategoryCard.vue";
 import CategoryModal from "../../components/help/CategoryModal.vue";
+import { supportedLocales, setLocale } from "../../i18n";
 import { useI18n } from "vue-i18n";
 
 const { t, locale } = useI18n();
+const langOptions = supportedLocales;
+
 const lang = computed({
   get: () => locale.value,
   set: (value) => {
-    locale.value = value;
-    localStorage.setItem("lang", value);
-    document.documentElement.lang = value;
+    setLocale(value);
   },
 });
 

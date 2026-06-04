@@ -106,15 +106,17 @@ function clearFilters() {
       />
     </div>
 
-    <!-- Actions -->
-    <div class="filter-actions">
-      <button
+     <button
         class="btn-icon btn-clear"
         title="Clear filters"
         @click="clearFilters"
       >
-        <i class="pi pi-times" style="color: red"></i>
+        <i class="pi pi-times-circle" style="color: red"></i>
       </button>
+
+    <!-- Actions -->
+    <div class="actions">
+     
       <button
         class="btn-icon btn-add"
         title="Add new RFQ"
@@ -202,7 +204,7 @@ function clearFilters() {
   pointer-events: none;
 }
 
-.filter-actions {
+.actions {
   display: flex;
   align-items: center;
   gap: 8px;
