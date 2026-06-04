@@ -11,9 +11,9 @@ defineProps({
 });
 
 const statusMap = {
-  Approve: { cls: "badge-approve" },
+  Accept: { cls: "badge-accept" },
   Waiting: { cls: "badge-waiting" },
-  Reject:  { cls: "badge-reject"  },
+  Resent:  { cls: "badge-resent"  },
   Cancel:  { cls: "badge-cancel"  },
 };
 </script>
@@ -148,10 +148,11 @@ td {
   letter-spacing: 0.02em;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 4px 10px rgba(0,0,0,0.18);
 }
-.badge-approve { background: rgba(16,185,129,0.22); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.45); }
+.badge-accept { background: rgba(16,185,129,0.22); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.45); }
 .badge-waiting { background: rgba(245,158,11,0.22); color: #fde68a; border: 1px solid rgba(251,191,36,0.45); }
-.badge-reject { background: rgba(239,68,68,0.22); color: #fca5a5; border: 1px solid rgba(248,113,113,0.45); }
+.badge-resent { background: rgba(239,68,68,0.22); color: #fca5a5; border: 1px solid rgba(248,113,113,0.45); }
 .badge-cancel { background: rgba(148,163,184,0.16); color: #e2e8f0; border: 1px solid rgba(148,163,184,0.35); }
+
 .empty-cell { text-align: center; padding: 60px 0; }
 .empty-state { display: flex; flex-direction: column; align-items: center; gap: 12px; color: rgba(255,255,255,0.25); font-size: 14px; }
 </style>

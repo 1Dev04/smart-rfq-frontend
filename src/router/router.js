@@ -21,6 +21,12 @@ const routes = [
     meta: { requiresAuth: true, role: 'user' }
   },
   {
+    path: '/help-category',
+    name: 'Help Category',
+    component: () => import('../views/rfq/HelpCategory.vue'),
+    meta: {requiresAuth: true, role: 'user' }
+  },
+  {
     path: '/admin',
     name: 'AdminDashboard',
     component: () => import('../views/rfq/AdminDashboard.vue'),

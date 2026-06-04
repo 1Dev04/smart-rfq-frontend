@@ -1,0 +1,10 @@
+{
+  "dashboard-user": {
+    "title": "Document Request Dashboard : User"
+  },
+  "help": {
+    "title": "Help",
+    "subtitle": "Select Category",
+    "hint": "Hover to preview · Click to select"
+  }
+}

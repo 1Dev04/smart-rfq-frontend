@@ -1,7 +1,8 @@
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth.js'
 
 const router = useRouter()
@@ -17,14 +18,22 @@ const loading = ref(false)
 const error = ref('')
 let errorTimer = null
 
-const lang = ref('en')
+const { locale } = useI18n()
+const lang = computed({
+  get: () => locale.value,
+  set: (value) => {
+    locale.value = value
+    localStorage.setItem('lang', value)
+    document.documentElement.lang = value
+  },
+})
 const langs = [
   { code: 'th', flag: '🇹🇭', label: 'ภาษาไทย', placeholder_email: 'ชื่อผู้ใช้', placeholder_pass: 'รหัสผ่าน', login_text: 'เข้าสู่ระบบ', keep: 'จดจำฉันไว้', forgot: 'ลืมรหัสผ่าน?', or: 'หรือ', ms: 'เข้าสู่ระบบด้วย Microsoft', err_empty: 'กรุณากรอก Email และ Password', err_wrong: 'Email หรือ Password ไม่ถูกต้อง' },
   { code: 'en', flag: '🇬🇧', label: 'English',  placeholder_email: 'username', placeholder_pass: '••••••••', login_text: 'Login', keep: 'Keep me logged in', forgot: 'Forgot password?', or: 'or', ms: 'Sign in with Microsoft', err_empty: 'Please enter Email and Password', err_wrong: 'Invalid Email or Password' },
   { code: 'ja', flag: '🇯🇵', label: '日本語',    placeholder_email: 'ユーザー名', placeholder_pass: 'パスワード', login_text: 'ログイン', keep: 'ログイン状態を保持', forgot: 'パスワードを忘れた？', or: 'または', ms: 'Microsoftでサインイン', err_empty: 'メールとパスワードを入力してください', err_wrong: 'メールまたはパスワードが正しくありません' },
 ]
 const showLangMenu = ref(false)
-const currentLang = computed(() => langs.find(l => l.code === lang.value))
+const currentLang = computed(() => langs.find(l => l.code === lang.value) || langs[1])
 
 function setError(msg) {
   error.value = msg

@@ -82,10 +82,11 @@ function clearFilters() {
           @change="update('status', $event.target.value)"
         >
           <option value="">All</option>
-          <option>Approve</option>
+          <option>Accept</option>
           <option>Waiting</option>
-          <option>Reject</option>
+          <option>Resent</option>
           <option>Cancel</option>
+          
         </select>
         <svg class="select-arrow" width="11" height="11" viewBox="0 0 12 12" fill="none">
           <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>

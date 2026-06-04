@@ -2,6 +2,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 
@@ -14,14 +15,22 @@ const success = ref(false)
 const error = ref('')
 let errorTimer = null
 
-const lang = ref('en')
+const { locale } = useI18n()
+const lang = computed({
+  get: () => locale.value,
+  set: (value) => {
+    locale.value = value
+    localStorage.setItem('lang', value)
+    document.documentElement.lang = value
+  },
+})
 const langs = [
   { code: 'th', flag: '🇹🇭', label: 'ภาษาไทย', title: 'ลืมรหัสผ่าน?', subtitle: 'กรอก Email ที่ลงทะเบียนไว้เพื่อรับลิงก์รีเซ็ตรหัสผ่าน', btn: 'ส่งลิงก์รีเซ็ต', back: 'กลับไปหน้าเข้าสู่ระบบ', placeholder: 'ชื่อผู้ใช้', success_title: 'ส่งลิงก์แล้ว!', success_msg: 'กรุณาตรวจสอบ Email ของคุณ', err_empty: 'กรุณากรอก Email', err_invalid: 'รูปแบบ Email ไม่ถูกต้อง' },
   { code: 'en', flag: '🇬🇧', label: 'English',  title: 'Forgot Password?', subtitle: 'Enter your registered email address to receive a password reset link.', btn: 'Send Reset Link', back: 'Back to Login', placeholder: 'username', success_title: 'Link Sent!', success_msg: 'Please check your email inbox.', err_empty: 'Please enter your Email', err_invalid: 'Invalid email format' },
   { code: 'ja', flag: '🇯🇵', label: '日本語',    title: 'パスワードを忘れた？', subtitle: 'パスワードリセットリンクを受け取るには登録済みのメールアドレスを入力してください。', btn: 'リセットリンクを送信', back: 'サインインに戻る', placeholder: 'ユーザー名', success_title: '送信しました！', success_msg: 'メールボックスを確認してください。', err_empty: 'メールを入力してください', err_invalid: 'メール形式が正しくありません' },
 ]
 const showLangMenu = ref(false)
-const currentLang = computed(() => langs.find(l => l.code === lang.value))
+const currentLang = computed(() => langs.find(l => l.code === lang.value) || langs[1])
 
 const emailRegex = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,48}[a-zA-Z0-9]$/
 

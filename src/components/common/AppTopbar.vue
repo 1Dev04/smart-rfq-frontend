@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from "vue";
+import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 const props = defineProps({
   title: { type: String, default: "Dashboard" },
@@ -8,14 +9,22 @@ const props = defineProps({
 });
 
 /* ── Language ── */
-const lang = ref("en");
+const { locale } = useI18n();
+const lang = computed({
+  get: () => locale.value,
+  set: (value) => {
+    locale.value = value;
+    localStorage.setItem("lang", value);
+    document.documentElement.lang = value;
+  },
+});
 const langs = [
-  { code: "th", flag: "🇹🇭", label: "Thailand" },
+  { code: "th", flag: "🇹🇭", label: "ไทย" },
   { code: "en", flag: "🇬🇧", label: "English" },
-  { code: "ja", flag: "🇯🇵", label: "Japan" },
+  { code: "ja", flag: "🇯🇵", label: "日本語" },
 ];
 const showLangMenu = ref(false);
-const currentLang  = computed(() => langs.find((l) => l.code === lang.value));
+const currentLang = computed(() => langs.find((l) => l.code === lang.value) || langs[1]);
 
 /* ── Avatar ── */
 const avatarUrl = computed(
