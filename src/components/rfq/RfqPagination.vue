@@ -41,7 +41,7 @@ function setSize(e) {
       <span class="show-label">Show</span>
       <div class="select-wrap">
         <select :value="pageSize" class="size-select" @change="setSize">
-          <option :value="8">8</option>
+          <option :value="10">10</option>
           <option :value="50">50</option>
           <option :value="100">100</option>
         </select>
