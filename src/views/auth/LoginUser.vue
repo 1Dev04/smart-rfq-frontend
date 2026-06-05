@@ -144,11 +144,8 @@ async function handleLogin() {
           <img :src="LoginLogo" alt="Smart RFQ" class="logo-img" />
         </div>
 
-        <!-- Headline -->
-        <div class="headline">
-          <h1 class="headline-title">Welcome</h1>
-          <p class="headline-sub">Sign in to your workspace</p>
-        </div>
+       
+        
 
         <!-- Email field -->
         <div class="field">
@@ -258,8 +255,7 @@ async function handleLogin() {
       </div>
     </div>
 
-    <!-- Bottom watermark -->
-    <p class="watermark">Smart RFQ · Powered by ITG</p>
+   
   </div>
 </template>
 
@@ -444,7 +440,7 @@ async function handleLogin() {
     var(--orb-3, #60c4ff) 160deg,
     transparent 240deg
   );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   animation: spinRing 5s linear infinite;
