@@ -238,16 +238,16 @@ async function handleLogin() {
 .login-root {
   min-height: 100vh; width: 100%;
   display: flex; align-items: center; justify-content: center;
-  background: #050a18; font-family: 'DM Sans', sans-serif;
+  background: var(--bg, #050a18); color: var(--text, #e8f6ff); font-family: 'DM Sans', sans-serif;
   position: relative; overflow: hidden;
 }
 
 .bg-wrap { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .orb { position: absolute; border-radius: 50%; filter: blur(100px); animation: orbDrift ease-in-out infinite alternate; }
-.orb-1 { width: 700px; height: 700px; background: #0d2d8a; opacity: 0.5; top: -200px; left: -200px; animation-duration: 18s; }
-.orb-2 { width: 500px; height: 500px; background: #0a4fa8; opacity: 0.4; bottom: -150px; right: -100px; animation-duration: 14s; animation-delay: -6s; }
-.orb-3 { width: 350px; height: 350px; background: #1a7ddc; opacity: 0.2; top: 40%; left: 60%; animation-duration: 20s; animation-delay: -10s; }
-.orb-4 { width: 250px; height: 250px; background: #38a3f5; opacity: 0.12; top: 20%; left: 30%; animation-duration: 12s; animation-delay: -4s; }
+.orb-1 { width: 700px; height: 700px; background: var(--orb-1, #0d2d8a); opacity: 0.5; top: -200px; left: -200px; animation-duration: 18s; }
+.orb-2 { width: 500px; height: 500px; background: var(--orb-2, #0a4fa8); opacity: 0.4; bottom: -150px; right: -100px; animation-duration: 14s; animation-delay: -6s; }
+.orb-3 { width: 350px; height: 350px; background: var(--orb-3, #1a7ddc); opacity: 0.2; top: 40%; left: 60%; animation-duration: 20s; animation-delay: -10s; }
+.orb-4 { width: 250px; height: 250px; background: var(--accent, #38a3f5); opacity: 0.12; top: 20%; left: 30%; animation-duration: 12s; animation-delay: -4s; }
 @keyframes orbDrift { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
 .grid {
   position: absolute; inset: 0;
@@ -313,7 +313,7 @@ async function handleLogin() {
 
 .login-card {
   position: relative; width: 460px;
-  background: #ffffff; border-radius: 24px;
+  background: var(--bg-elevated, #ffffff); border-radius: 24px;
   padding: 38px 44px 34px; overflow: hidden;
   box-shadow: 0 40px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.9);
 }

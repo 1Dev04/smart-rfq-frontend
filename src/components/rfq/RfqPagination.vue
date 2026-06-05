@@ -63,18 +63,18 @@ function setSize(e) {
 .pagination-bar {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 8px;
-  padding: 12px 28px; background: rgba(255,255,255,0.03); border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 12px 28px; background: var(--bg-surface, rgba(255,255,255,0.04)); border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
   flex-shrink: 0; font-family: "DM Sans", sans-serif;
 }
-.showing-text { font-size: 12.5px; color: rgba(255,255,255,0.4); }
+.showing-text { font-size: 12.5px; color: var(--text-muted, rgba(255,255,255,0.35)); }
 .pagination { display: flex; align-items: center; gap: 5px; }
-.show-label { font-size: 12.5px; color: rgba(255,255,255,0.4); margin-right: 4px; }
+.show-label { font-size: 12.5px; color: var(--text-muted, rgba(255,255,255,0.35)); margin-right: 4px; }
 .select-wrap { position: relative; display: inline-flex; }
-.size-select { appearance: none; height: 28px; padding: 0 24px 0 8px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; color: #fff; font-size: 12px; font-family: "DM Sans", sans-serif; cursor: pointer; outline: none; }
-.size-select option { background: #0d1428; }
-.select-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.4); pointer-events: none; }
-.pg-btn { min-width: 28px; height: 28px; padding: 0 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: rgba(255,255,255,0.6); font-size: 12.5px; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; display: flex; align-items: center; justify-content: center; font-family: "DM Sans", sans-serif; }
-.pg-btn:hover:not(:disabled) { background: rgba(56,163,245,0.15); color: #38a3f5; border-color: rgba(56,163,245,0.3); }
+.size-select { appearance: none; height: 28px; padding: 0 24px 0 8px; background: var(--bg-elevated, rgba(255,255,255,0.08)); border: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); border-radius: 6px; color: var(--text-primary, #fff); font-size: 12px; font-family: "DM Sans", sans-serif; cursor: pointer; outline: none; }
+.size-select option { background: var(--bg-base, #0d1428); color: var(--text-primary, #fff); }
+.select-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted, rgba(255,255,255,0.35)); pointer-events: none; }
+.pg-btn { min-width: 28px; height: 28px; padding: 0 6px; background: var(--bg-elevated, rgba(255,255,255,0.08)); border: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); border-radius: 6px; color: var(--text-secondary, rgba(255,255,255,0.65)); font-size: 12.5px; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; display: flex; align-items: center; justify-content: center; font-family: "DM Sans", sans-serif; }
+.pg-btn:hover:not(:disabled) { background: var(--accent-dim, rgba(56,163,245,0.15)); color: var(--accent, #38a3f5); border-color: var(--border-accent, rgba(56,163,245,0.3)); }
 .pg-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.pg-btn.active { background: linear-gradient(135deg, #1a3d9e 0%, #38a3f5 100%) !important; color: #fff !important; border-color: transparent !important; font-weight: 600; }
+.pg-btn.active { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%) !important; color: #fff !important; border-color: transparent !important; font-weight: 600; }
 </style>

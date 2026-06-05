@@ -35,12 +35,17 @@ const navItems = [
            <rect x="14" y="14" width="7" height="7"/>
            <rect x="3" y="14" width="7" height="7"/>`,
   },
-  {
-  to: "/setting",
-  label: "Setting",
-  icon: `<circle cx="12" cy="12" r="3"/>
-         <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>`,
-},
+ {
+  to: "/theme",
+  label: "Theme",
+  icon: `
+    <path d="M12 2C6.48 2 2 6.03 2 11c0 2.5 1.19 4.74 3.08 6.32C6.24 18.31 7.56 19 9 19h1c.55 0 1 .45 1 1 0 1.66 1.34 3 3 3 4.97 0 9-4.48 9-10S17.52 2 12 2z"/>
+    <circle cx="6.5" cy="11.5" r="1.5"/>
+    <circle cx="9.5" cy="7.5" r="1.5"/>
+    <circle cx="14.5" cy="7.5" r="1.5"/>
+    <circle cx="17.5" cy="11.5" r="1.5"/>
+  `,
+}
 ];
 </script>
 
@@ -119,8 +124,8 @@ const navItems = [
 .sidebar {
   width: 62px;
   min-height: 100vh;
-  background: rgba(255,255,255,0.05);
-  border-right: 1px solid rgba(255,255,255,0.08);
+  background: var(--bg-elevated, rgba(255,255,255,0.05));
+  border-right: 1px solid var(--border, rgba(255,255,255,0.08));
   backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
@@ -151,23 +156,23 @@ const navItems = [
   width: 34px; height: 34px;
   object-fit: contain;
   border-radius: 8px;
-  background: rgba(255,255,255,0.12);
+  background: var(--bg-surface, rgba(255,255,255,0.12));
   padding: 2px;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 8px rgba(56,163,245,0.3));
+  filter: drop-shadow(0 2px 8px var(--accent-glow, rgba(56,163,245,0.3)));
 }
 .sb-logo-text {
   font-family: "Sora", sans-serif;
   font-size: 13px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-h, #fff);
   white-space: nowrap;
 }
 
 .sb-divider {
   width: calc(100% - 24px);
   height: 1px;
-  background: rgba(255,255,255,0.08);
+  background: var(--bg-secondary, rgba(255,255,255,0.08));
   margin: 6px 0 12px;
   flex-shrink: 0;
 }
@@ -186,7 +191,7 @@ const navItems = [
   gap: 12px;
   padding: 10px 10px 10px 14px;
   border-radius: 10px;
-  color: rgba(255,255,255,0.45);
+  color: var(--text-muted, rgba(255,255,255,0.45));
   text-decoration: none;
   position: relative;
   transition: background 0.18s, color 0.18s;
@@ -199,12 +204,12 @@ const navItems = [
   width: 100%;
 }
 .sb-item:hover {
-  background: rgba(56,163,245,0.1);
-  color: rgba(255,255,255,0.8);
+  background: var(--accent-dim, rgba(56,163,245,0.1));
+  color: var(--text, rgba(255,255,255,0.8));
 }
 .sb-item.active {
-  background: rgba(56,163,245,0.18);
-  color: #38a3f5;
+  background: var(--accent-bg, rgba(56,163,245,0.18));
+  color: var(--accent, #38a3f5);
 }
 .sb-item-indicator {
   position: absolute;
@@ -214,7 +219,7 @@ const navItems = [
   background: transparent;
   transition: background 0.18s;
 }
-.sb-item.active .sb-item-indicator { background: #38a3f5; }
+.sb-item.active .sb-item-indicator { background: var(--accent, #38a3f5); }
 .sb-label {
   font-size: 13px;
   font-weight: 500;
@@ -223,7 +228,7 @@ const navItems = [
 
 /* Logout */
 .sb-logout {
-  color: rgba(255,100,100,0.55);
+  color: var(--text-muted, rgba(255,100,100,0.55));
   margin: 0 8px;
   width: calc(100% - 16px);
 }

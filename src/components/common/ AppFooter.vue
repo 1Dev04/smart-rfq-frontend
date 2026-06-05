@@ -15,9 +15,9 @@ defineProps({
   text-align: center;
   padding: 8px;
   font-size: 11px;
-  color: rgba(255,255,255,0.2);
-  border-top: 1px solid rgba(255,255,255,0.04);
-  background: rgba(255,255,255,0.02);
+  color: var(--text-muted, rgba(255,255,255,0.2));
+  border-top: 1px solid var(--border, rgba(255,255,255,0.04));
+  background: var(--bg-secondary, rgba(255,255,255,0.02));
   flex-shrink: 0;
   font-family: "DM Sans", sans-serif;
 }

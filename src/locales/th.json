@@ -1,6 +1,6 @@
 {
-  "dashboard-user": {
-    "title": "คำขอเอกสารแดชบอร์ด : ผู้ใช้"
+  "doc-req-dashboard": {
+    "title": "คำขอเอกสารแดชบอร์ด"
   },
   "help": {
     "title": "ช่วยเหลือ",

@@ -5,6 +5,9 @@ import CategoryCard from "../../components/help/CategoryCard.vue";
 import CategoryModal from "../../components/help/CategoryModal.vue";
 import { supportedLocales, setLocale } from "../../i18n";
 import { useI18n } from "vue-i18n";
+import { useThemeStore, themes } from "../../stores/useThemeStore.js";
+
+const theme = useThemeStore();
 
 const { t, locale } = useI18n();
 const langOptions = supportedLocales;
@@ -16,10 +19,8 @@ const lang = computed({
   },
 });
 
-/* ── Selected category for modal ── */
 const selected = ref(null);
 
-/* ── Category data ── */
 const categories = ref([
   {
     id: "project-revenue",
@@ -186,28 +187,16 @@ const categories = ref([
 
     <div class="hc-page">
 
-      <!-- ── Page header ── -->
+    
       <div class="page-header">
         <div class="header-text">
           <p class="header-hint">{{ t('help.hint') }}</p>
           <h2 class="header-title">{{ t('help.subtitle') }}</h2>
         </div>
 
-        <!-- Language toggle -->
-        <div class="lang-toggle">
-          <button
-            v-for="l in langOptions"
-            :key="l.code"
-            :class="['lang-opt', { active: lang === l.code }]"
-            @click="lang = l.code"
-          >
-            <span>{{ l.flag }}</span>
-            <span>{{ l.label }}</span>
-          </button>
-        </div>
+      
       </div>
 
-      <!-- ── Category grid ── -->
       <div class="cat-grid">
         <CategoryCard
           v-for="cat in categories"
@@ -220,7 +209,6 @@ const categories = ref([
 
     </div>
 
-    <!-- ── Confirmation modal ── -->
     <CategoryModal
       :category="selected"
       :lang="lang"
@@ -231,7 +219,7 @@ const categories = ref([
 </template>
 
 <style scoped>
-/* ── Page wrapper ── */
+
 .hc-page {
   flex: 1;
   display: flex;
@@ -241,7 +229,6 @@ const categories = ref([
   gap: 24px;
 }
 
-/* ── Page header ── */
 .page-header {
   display: flex;
   align-items: flex-end;
@@ -255,7 +242,7 @@ const categories = ref([
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
+  color: var(--text-muted, rgba(255,255,255,0.35));
   margin: 0;
   font-family: "DM Sans", sans-serif;
 }
@@ -263,20 +250,12 @@ const categories = ref([
   font-family: "Sora", sans-serif;
   font-size: 22px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary, #fff);
   margin: 0;
   letter-spacing: 0.01em;
 }
 
-/* Language toggle */
-.lang-toggle {
-  display: flex;
-  gap: 4px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  padding: 4px;
-}
+
 .lang-opt {
   display: flex;
   align-items: center;
@@ -285,7 +264,7 @@ const categories = ref([
   border-radius: 7px;
   border: none;
   background: none;
-  color: rgba(255,255,255,0.45);
+  color: var(--text-secondary, rgba(255,255,255,0.65));
   font-size: 12px;
   font-weight: 600;
   font-family: "DM Sans", sans-serif;
@@ -294,15 +273,15 @@ const categories = ref([
   letter-spacing: 0.04em;
 }
 .lang-opt:hover {
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.8);
+  background: var(--bg-surface, rgba(255,255,255,0.04));
+  color: var(--text-primary, #fff);
 }
 .lang-opt.active {
-  background: rgba(56,163,245,0.18);
-  color: #38a3f5;
+  background: var(--accent-dim, rgba(56,163,245,0.15));
+  color: var(--accent, #38a3f5);
 }
 
-/* ── Category grid ── */
+
 .cat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

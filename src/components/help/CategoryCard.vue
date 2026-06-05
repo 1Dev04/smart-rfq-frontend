@@ -9,10 +9,10 @@ const emit = defineEmits(["select"]);
 
 <template>
   <div class="cat-card" @click="emit('select', category)">
-    <!-- Glow border on hover -->
+
     <div class="card-glow" />
 
-    <!-- Header -->
+   
     <div class="card-header">
       <div class="card-icon">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -25,7 +25,7 @@ const emit = defineEmits(["select"]);
       <h3 class="card-title">{{ category.name[lang] || category.name.en }}</h3>
     </div>
 
-    <!-- Code badges — visible on hover -->
+
     <div class="card-codes">
       <div
         v-for="c in category.codes"
@@ -37,7 +37,7 @@ const emit = defineEmits(["select"]);
       </div>
     </div>
 
-    <!-- Footer hint -->
+    
     <div class="card-footer">
       <span class="footer-hint">Click to select</span>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -52,8 +52,8 @@ const emit = defineEmits(["select"]);
 <style scoped>
 .cat-card {
   position: relative;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.09);
+  background: var(--bg-surface, rgba(255,255,255,0.04));
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
   border-radius: 16px;
   padding: 20px;
   cursor: pointer;
@@ -67,8 +67,8 @@ const emit = defineEmits(["select"]);
 }
 .cat-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(56,163,245,0.45);
-  background: rgba(56,163,245,0.07);
+  border-color: var(--border-accent, rgba(56,163,245,0.3));
+  background: var(--accent-dim, rgba(56,163,245,0.15));
 }
 
 
@@ -76,7 +76,7 @@ const emit = defineEmits(["select"]);
   position: absolute;
   inset: -1px;
   border-radius: 16px;
-  background: radial-gradient(circle at 50% 0%, rgba(56,163,245,0.18) 0%, transparent 65%);
+  background: radial-gradient(circle at 50% 0%, var(--accent-glow, rgba(56,163,245,0.25)) 0%, transparent 65%);
   opacity: 0;
   transition: opacity 0.3s;
   pointer-events: none;
@@ -92,23 +92,23 @@ const emit = defineEmits(["select"]);
 .card-icon {
   width: 36px; height: 36px;
   border-radius: 10px;
-  background: rgba(56,163,245,0.15);
-  border: 1px solid rgba(56,163,245,0.25);
+  background: var(--accent-dim, rgba(56,163,245,0.15));
+  border: 1px solid var(--border-accent, rgba(56,163,245,0.3));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #38a3f5;
+  color: var(--accent, #38a3f5);
   flex-shrink: 0;
   transition: background 0.2s;
 }
 .cat-card:hover .card-icon {
-  background: rgba(56,163,245,0.25);
+  background: var(--accent-glow, rgba(56,163,245,0.25));
 }
 .card-title {
   font-family: "Sora", sans-serif;
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary, #fff);
   margin: 0;
   line-height: 1.4;
   padding-top: 2px;
@@ -137,9 +137,9 @@ const emit = defineEmits(["select"]);
 .code-badge {
   font-size: 10px;
   font-weight: 700;
-  color: #38a3f5;
-  background: rgba(56,163,245,0.15);
-  border: 1px solid rgba(56,163,245,0.3);
+  color: var(--accent, #38a3f5);
+  background: var(--accent-dim, rgba(56,163,245,0.15));
+  border: 1px solid var(--border-accent, rgba(56,163,245,0.3));
   border-radius: 5px;
   padding: 2px 7px;
   letter-spacing: 0.06em;
@@ -149,7 +149,7 @@ const emit = defineEmits(["select"]);
 }
 .code-desc {
   font-size: 11.5px;
-  color: rgba(255,255,255,0.55);
+  color: var(--text-secondary, rgba(255,255,255,0.65));
   line-height: 1.45;
 }
 
@@ -163,7 +163,7 @@ const emit = defineEmits(["select"]);
   opacity: 0;
   transform: translateY(4px);
   transition: opacity 0.2s, transform 0.2s;
-  color: #38a3f5;
+  color: var(--accent, #38a3f5);
 }
 .cat-card:hover .card-footer {
   opacity: 1;

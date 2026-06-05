@@ -3,7 +3,7 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 
-/* ── v-model:filters ── */
+
 const props = defineProps({
   filters: {
     type: Object,
@@ -36,7 +36,7 @@ function clearFilters() {
 
 <template>
   <div class="filter-bar">
-    <!-- RFQ No. -->
+    
     <div class="filter-group">
       <label class="filter-label">RFQ No.</label>
       <input
@@ -48,7 +48,7 @@ function clearFilters() {
       />
     </div>
 
-    <!-- Type -->
+
     <div class="filter-group">
       <label class="filter-label">Type</label>
       <input
@@ -60,7 +60,7 @@ function clearFilters() {
       />
     </div>
 
-    <!-- List -->
+   
     <div class="filter-group">
       <label class="filter-label">List</label>
       <input
@@ -72,7 +72,7 @@ function clearFilters() {
       />
     </div>
 
-    <!-- Status -->
+   
     <div class="filter-group">
       <label class="filter-label">Status</label>
       <div class="select-wrap">
@@ -94,7 +94,7 @@ function clearFilters() {
       </div>
     </div>
 
-    <!-- Contact User -->
+    
     <div class="filter-group">
       <label class="filter-label">Contact User</label>
       <input
@@ -111,10 +111,9 @@ function clearFilters() {
         title="Clear filters"
         @click="clearFilters"
       >
-        <i class="pi pi-times-circle" style="color: red"></i>
+        <i class="pi pi-times-circle"></i>
       </button>
 
-    <!-- Actions -->
     <div class="actions">
      
       <button
@@ -136,8 +135,8 @@ function clearFilters() {
   gap: 12px;
   flex-wrap: wrap;
   padding: 14px 28px;
-  background: rgba(255,255,255,0.03);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: var(--bg-surface, rgba(255,255,255,0.04));
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
   flex-shrink: 0;
 }
 
@@ -150,7 +149,7 @@ function clearFilters() {
 .filter-label {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255,255,255,0.45);
+  color: var(--text-muted, rgba(255,255,255,0.35));
   letter-spacing: 0.07em;
   text-transform: uppercase;
   font-family: "DM Sans", sans-serif;
@@ -159,20 +158,20 @@ function clearFilters() {
 .filter-input {
   height: 34px;
   padding: 0 12px;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--bg-elevated, rgba(255,255,255,0.08));
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-primary, #fff);
   font-family: "DM Sans", sans-serif;
   font-size: 13px;
   width: 130px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.filter-input::placeholder { color: rgba(255,255,255,0.25); }
+.filter-input::placeholder { color: var(--text-muted, rgba(255,255,255,0.35)); }
 .filter-input:focus {
-  border-color: rgba(56,163,245,0.5);
-  box-shadow: 0 0 0 3px rgba(56,163,245,0.1);
+  border-color: var(--border-accent, rgba(56,163,245,0.3));
+  box-shadow: 0 0 0 3px var(--accent-dim, rgba(56,163,245,0.15));
 }
 .filter-input.w-sm { width: 90px; }
 .filter-input.w-lg { width: 160px; }
@@ -182,10 +181,10 @@ function clearFilters() {
   appearance: none;
   height: 34px;
   padding: 0 32px 0 12px;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--bg-elevated, rgba(255,255,255,0.08));
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-primary, #fff);
   font-family: "DM Sans", sans-serif;
   font-size: 13px;
   width: 120px;
@@ -193,14 +192,14 @@ function clearFilters() {
   outline: none;
   transition: border-color 0.2s;
 }
-.filter-select:focus { border-color: rgba(56,163,245,0.5); }
-.filter-select option { background: #0d1428; color: #fff; }
+.filter-select:focus { border-color: var(--border-accent, rgba(56,163,245,0.3)); }
+.filter-select option { background: var(--bg-base, #0d1428); color: var(--text-primary, #fff); }
 .select-arrow {
   position: absolute;
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255,255,255,0.4);
+  color: var(--text-muted, rgba(255,255,255,0.35));
   pointer-events: none;
 }
 
@@ -227,20 +226,20 @@ function clearFilters() {
 .btn-icon:hover { transform: translateY(-1px); }
 
 .btn-clear {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.4);
+  background: var(--bg-surface, rgba(255,255,255,0.04));
+  border-color: var(--border-subtle, rgba(255,255,255,0.08));
+  color: var(--text-secondary, rgba(255,255,255,0.65));
 }
 .btn-clear:hover {
-  background: rgba(239,68,68,0.12);
-  border-color: rgba(248,113,113,0.35);
-  color: #f87171;
+  background: var(--accent-dim, rgba(56,163,245,0.15));
+  border-color: var(--border-accent, rgba(56,163,245,0.3));
+  color: var(--accent, #38a3f5);
 }
 
 .btn-add {
-  background: rgba(255,255,255,0.07);
-  border-color: rgba(56,163,245,0.4);
-  color: #38a3f5;
+  background: var(--accent-dim, rgba(56,163,245,0.15));
+  border-color: var(--border-accent, rgba(56,163,245,0.3));
+  color: var(--accent, #38a3f5);
 }
-.btn-add:hover { background: rgba(56,163,245,0.15); }
+.btn-add:hover { background: var(--accent-glow, rgba(56,163,245,0.25)); }
 </style>

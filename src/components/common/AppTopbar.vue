@@ -76,10 +76,11 @@ const avatarUrl = computed(
                 style="margin-left:auto"
                 width="13" height="13"
                 viewBox="0 0 14 14" fill="none"
+
               >
                 <path
                   d="M2.5 7L5.5 10L11.5 4"
-                  stroke="#38a3f5"
+                  stroke="currentColor"
                   stroke-width="1.8"
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -109,8 +110,8 @@ const avatarUrl = computed(
   align-items: center;
   justify-content: space-between;
   padding: 16px 28px;
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: var(--bg-elevated, rgba(255,255,255,0.04));
+  border-bottom: 1px solid var(--border, rgba(255,255,255,0.07));
   backdrop-filter: blur(16px);
   flex-shrink: 0;
   position: sticky;
@@ -123,7 +124,7 @@ const avatarUrl = computed(
   font-family: "Sora", sans-serif;
   font-size: 18px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-h, #fff);
   letter-spacing: 0.01em;
   margin: 0;
 }
@@ -140,9 +141,9 @@ const avatarUrl = computed(
   display: flex;
   align-items: center;
   gap: 7px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.9);
+  background: var(--bg-secondary, rgba(255,255,255,0.08));
+  border: 1px solid var(--border, rgba(255,255,255,0.15));
+  color: var(--text, rgba(255,255,255,0.9));
   padding: 7px 13px;
   border-radius: 10px;
   font-size: 13px;
@@ -150,7 +151,7 @@ const avatarUrl = computed(
   font-family: "DM Sans", sans-serif;
   transition: background 0.2s;
 }
-.lang-btn:hover { background: rgba(255,255,255,0.13); }
+.lang-btn:hover { background: var(--accent-dim, rgba(255,255,255,0.13)); }
 
 .chevron { opacity: 0.6; transition: transform 0.2s; }
 .chevron.open { transform: rotate(180deg); }
@@ -159,13 +160,13 @@ const avatarUrl = computed(
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: rgba(10,15,30,0.95);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: var(--bg, rgba(10,15,30,0.95));
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
   border-radius: 14px;
   overflow: hidden;
   min-width: 150px;
   backdrop-filter: blur(20px);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.25);
   z-index: 100;
 }
 .lang-item {
@@ -176,16 +177,19 @@ const avatarUrl = computed(
   padding: 10px 16px;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.7);
+  color: var(--text-muted, rgba(255,255,255,0.7));
   font-size: 13px;
   cursor: pointer;
   font-family: "DM Sans", sans-serif;
   transition: background 0.15s;
 }
-.lang-item:hover { background: rgba(56,163,245,0.12); color: #fff; }
+.lang-item:hover {
+  background: var(--accent-dim, rgba(56,163,245,0.12));
+  color: var(--text-h, #fff);
+}
 .lang-item.active {
-  background: rgba(56,163,245,0.18);
-  color: #38a3f5;
+  background: var(--accent-bg, rgba(56,163,245,0.18));
+  color: var(--accent, #38a3f5);
   font-weight: 500;
 }
 
@@ -196,8 +200,8 @@ const avatarUrl = computed(
   gap: 10px;
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--bg-secondary, rgba(255,255,255,0.06));
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
   box-shadow: 0 10px 24px rgba(0,0,0,0.18);
   backdrop-filter: blur(14px);
 }
@@ -213,8 +217,8 @@ const avatarUrl = computed(
   flex-direction: column;
   line-height: 1.15;
 }
-.profile-role  { font-size: 12px; font-weight: 700; color: #fff; }
-.profile-email { font-size: 11px; color: rgba(255,255,255,0.65); }
+.profile-role  { font-size: 12px; font-weight: 700; color: var(--text-h, #fff); }
+.profile-email { font-size: 11px; color: var(--text-muted, rgba(255,255,255,0.65)); }
 
 /* Transitions */
 .menu-drop-enter-active,

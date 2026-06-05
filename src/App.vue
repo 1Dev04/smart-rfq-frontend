@@ -3,6 +3,8 @@
 import { ref, onMounted } from 'vue'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import { RouterView } from 'vue-router'
+import { useThemeStore } from "./stores/useThemeStore.js";
+useThemeStore();
 
 const loading = ref(true)
 

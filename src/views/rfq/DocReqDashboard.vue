@@ -75,21 +75,21 @@ watch([filteredRows, pageSize], () => { currentPage.value = 1; });
 
 <template>
   <AppLayout
-    :title="t('dashboard-user.title')"
+    :title="t('doc-req-dashboard.title')"
     role="User"
     email="user.a@itg.co.th"
   >
-    <!-- Filter bar -->
+    
     <RfqFilterBar
       v-model:filters="filters"
       @search="currentPage = 1"
       @clear="currentPage = 1"
     />
 
-    <!-- Table -->
+   
     <RfqTable :rows="pagedRows" />
 
-    <!-- Pagination -->
+  
     <RfqPagination
       v-model:page="currentPage"
       v-model:pageSize="pageSize"

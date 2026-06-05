@@ -12,7 +12,7 @@ defineProps({
 <template>
   <div class="al-root">
 
-    <!-- ═══ Animated background ═══ -->
+   
     <div class="bg-layer" aria-hidden="true">
       <div class="orb orb-1" />
       <div class="orb orb-2" />
@@ -20,24 +20,24 @@ defineProps({
       <div class="grid-lines" />
     </div>
 
-    <!-- ═══ Shell ═══ -->
+    
     <div class="shell">
 
-      <!-- Sidebar -->
+    
       <AppSidebar />
 
-      <!-- Main column -->
+      
       <div class="main-col">
 
-        <!-- Topbar -->
+       
         <AppTopbar :title="title" :role="role" :email="email" />
 
-        <!-- Page content -->
+        
         <main class="page-content">
           <slot />
         </main>
 
-        <!-- Footer -->
+       
         <AppFooter />
 
       </div>
@@ -49,11 +49,12 @@ defineProps({
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Sora:wght@600;700&display=swap");
 
-/* Root */
+
 .al-root {
   min-height: 100vh;
   width: 100%;
-  background: #0a0f1e;
+  background: var(--bg, #0a0f1e);
+  color: var(--text, #e8f6ff);
   font-family: "DM Sans", sans-serif;
   position: relative;
   overflow: hidden;
@@ -61,7 +62,7 @@ defineProps({
   flex-direction: column;
 }
 
-/* Background */
+
 .bg-layer {
   position: absolute;
   inset: 0;
@@ -77,20 +78,20 @@ defineProps({
 }
 .orb-1 {
   width: 600px; height: 600px;
-  background: radial-gradient(circle, #1a3d9e 0%, transparent 70%);
+  background: radial-gradient(circle, var(--orb-1, #1a3d9e) 0%, transparent 70%);
   top: -200px; left: -150px;
   animation-duration: 16s;
 }
 .orb-2 {
   width: 450px; height: 450px;
-  background: radial-gradient(circle, #0c4a8f 0%, transparent 70%);
+  background: radial-gradient(circle, var(--orb-2, #0c4a8f) 0%, transparent 70%);
   bottom: -120px; right: -100px;
   animation-duration: 12s;
   animation-delay: -5s;
 }
 .orb-3 {
   width: 320px; height: 320px;
-  background: radial-gradient(circle, #38a3f5 0%, transparent 70%);
+  background: radial-gradient(circle, var(--orb-3, #38a3f5) 0%, transparent 70%);
   top: 40%; left: 55%;
   opacity: 0.18;
   animation-duration: 18s;
@@ -109,7 +110,7 @@ defineProps({
   background-size: 52px 52px;
 }
 
-/* Shell */
+
 .shell {
   position: relative;
   z-index: 10;
@@ -118,7 +119,7 @@ defineProps({
   min-height: 100vh;
 }
 
-/* Main column */
+
 .main-col {
   flex: 1;
   min-width: 0;
@@ -127,7 +128,7 @@ defineProps({
   overflow: auto;
 }
 
-/* Page content slot */
+
 .page-content {
   flex: 1;
   display: flex;

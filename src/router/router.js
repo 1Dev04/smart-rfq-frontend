@@ -17,7 +17,7 @@ const routes = [
   {
     path: '/doc-request-user',
     name: 'Doc Request',
-    component: () => import('../views/rfq/UserDashboard.vue'),
+    component: () => import('../views/rfq/DocReqDashboard.vue'),
     meta: { requiresAuth: true, role: 'user' }
   },
   {
@@ -25,6 +25,12 @@ const routes = [
     name: 'Help Category',
     component: () => import('../views/rfq/HelpCategory.vue'),
     meta: {requiresAuth: true, role: 'user' }
+  },
+  {
+    path: '/theme',
+    name: 'Theme',
+    component: () => import('../views/rfq/Theme.vue'),
+    meta: {requiresAuth: true, role: 'user'}
   },
   {
     path: '/admin',

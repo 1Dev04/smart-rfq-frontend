@@ -1,6 +1,6 @@
-
 /* ===== Smart RFQ — Design Tokens ===== */
 :root {
+  /* ── Palette ── */
   --rfq-navy-50:  #eaf0fb;
   --rfq-navy-100: #c9d9f4;
   --rfq-navy-200: #93b4e8;
@@ -25,10 +25,11 @@
   --rfq-neutral-800: #1c1f2b;
   --rfq-neutral-900: #0f1117;
 
-  --bg:           #ffffff;
-  --bg-secondary: #f2f3f8;
+  /* ── Semantic tokens (Light default) ── */
+  --bg:           #f4f7ff;
+  --bg-secondary: #e8eef9;
   --bg-elevated:  #ffffff;
-  --text:         #3c4157;
+  --text:         #1a2540;
   --text-h:       #08174a;
   --text-muted:   #6b7196;
   --border:       #d8dbe9;
@@ -40,24 +41,26 @@
   --shadow:       rgba(8, 23, 74, 0.08) 0 4px 12px -2px,
                   rgba(8, 23, 74, 0.04) 0 2px 4px -1px;
 
+  /* ── Layout ── */
   --sidebar-w:   240px;
   --navbar-h:    56px;
   --content-max: 1440px;
   --content-pad: 24px;
 
+  /* ── Typography ── */
   --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 15px/1.6 var(--sans);
   letter-spacing: 0.01em;
   color: var(--text);
-  color-scheme: light dark;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: white) {
-  :root {
+/* ── Dark mode — only when OS prefers dark AND no manual override ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
     --bg:           #0f1117;
     --bg-secondary: #1c1f2b;
     --bg-elevated:  #1c1f2b;
@@ -75,15 +78,88 @@
   }
 }
 
+/* ── Manual theme override via useThemeStore (class on <html>) ── */
+:root[data-theme="light"] {
+  --bg:           #f4f7ff;
+  --bg-secondary: #e8eef9;
+  --bg-elevated:  #ffffff;
+  --text:         #1a2540;
+  --text-h:       #08174a;
+  --text-muted:   #6b7196;
+  --border:       #d8dbe9;
+  --border-strong:#b0b5cc;
+  --accent:       #1a3d9e;
+  --accent-alt:   #38a3f5;
+  --accent-bg:    #eaf0fb;
+  --accent-border:rgba(26, 61, 158, 0.3);
+  --shadow:       rgba(8, 23, 74, 0.08) 0 4px 12px -2px,
+                  rgba(8, 23, 74, 0.04) 0 2px 4px -1px;
+}
+
 /* ===== Reset ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 
-/* ===== #app — ไม่ตั้ง width/border ที่นี่ ให้แต่ละ view จัดการเอง ===== */
+/* ===== #app ===== */
 #app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* ===== Loading screen — สว่าง ให้ Logo ชัดเจน ===== */
+#app-loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  /* gradient สว่าง — navy → sky แบบ radial */
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 30%, #c9d9f4 0%, transparent 70%),
+    linear-gradient(160deg, #dce8fb 0%, #eaf4ff 50%, #f0f6ff 100%);
+  z-index: 9999;
+  transition: opacity 0.4s ease;
+}
+#app-loading.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+#app-loading .loading-logo {
+  max-width: 320px;
+  filter: drop-shadow(0 8px 24px rgba(26, 61, 158, 0.25));
+  animation: logoPulse 2.2s ease-in-out infinite;
+}
+#app-loading .loading-bar-track {
+  width: 220px;
+  height: 3px;
+  background: rgba(26, 61, 158, 0.12);
+  border-radius: 99px;
+  overflow: hidden;
+}
+#app-loading .loading-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #1a3d9e, #38a3f5);
+  animation: loadBar 1.8s ease-in-out infinite;
+}
+#app-loading .loading-tagline {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(26, 61, 158, 0.55);
+}
+@keyframes logoPulse {
+  0%, 100% { transform: scale(1);    opacity: 1;    }
+  50%       { transform: scale(1.03); opacity: 0.88; }
+}
+@keyframes loadBar {
+  0%   { width: 0%;    margin-left: 0; }
+  50%  { width: 70%;   margin-left: 0; }
+  100% { width: 0%;    margin-left: 100%; }
 }
 
 /* Mobile blocker */

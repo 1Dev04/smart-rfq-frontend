@@ -1,6 +1,6 @@
 {
-  "dashboard-user": {
-    "title": "文書依頼ダッシュボード : ユーザー"
+  "doc-req-dashboard": {
+    "title": "文書依頼ダッシュボード"
   },
   "help": {
     "title": "ヘルプ",

@@ -29,7 +29,7 @@ function confirm() {
 
         
 
-        <!-- Icon -->
+      
         <div class="modal-icon">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="1.6"
@@ -41,7 +41,7 @@ function confirm() {
           </svg>
         </div>
 
-        <!-- Title -->
+      
         <p class="modal-label">Selected Category</p>
         <h2 class="modal-title">
           {{ category?.name[lang] || category?.name.en }}
@@ -49,7 +49,7 @@ function confirm() {
 
         <div class="modal-divider" />
 
-        <!-- Code list -->
+       
         <div class="modal-codes">
           <div
             v-for="c in category?.codes"
@@ -66,7 +66,7 @@ function confirm() {
 
         <div class="modal-divider" />
 
-        <!-- Actions -->
+        
         <div class="modal-actions">
           <button class="btn-cancel" @click="emit('close')">Cancel</button>
           <button class="btn-confirm" @click="confirm">
@@ -85,7 +85,7 @@ function confirm() {
 </template>
 
 <style scoped>
-/* Backdrop */
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -98,60 +98,59 @@ function confirm() {
   padding: 20px;
 }
 
-/* Box */
+
 .modal-box {
   position: relative;
-  background: #0d1428;
-  border: 1px solid rgba(56,163,245,0.25);
+  background: var(--bg-base, #0d1428);
+  border: 1px solid var(--border-accent, rgba(56,163,245,0.3));
   border-radius: 20px;
   padding: 32px 28px 28px;
   width: 100%;
   max-width: 480px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.5),
-              0 0 0 1px rgba(56,163,245,0.08);
+  box-shadow: var(--shadow, 0 24px 60px rgba(0,0,0,0.5));
   font-family: "DM Sans", sans-serif;
 }
 
 
-/* Icon */
+
 .modal-icon {
   width: 52px; height: 52px;
   border-radius: 14px;
-  background: rgba(56,163,245,0.15);
-  border: 1px solid rgba(56,163,245,0.3);
+  background: var(--accent-dim, rgba(56,163,245,0.15));
+  border: 1px solid var(--border-accent, rgba(56,163,245,0.3));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #38a3f5;
+  color: var(--accent, #38a3f5);
   margin-bottom: 16px;
 }
 
-/* Text */
+
 .modal-label {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #38a3f5;
+  color: var(--accent, #38a3f5);
   margin: 0 0 6px;
 }
 .modal-title {
   font-family: "Sora", sans-serif;
   font-size: 20px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary, #fff);
   margin: 0;
   line-height: 1.3;
 }
 
-/* Divider */
+
 .modal-divider {
   height: 1px;
-  background: rgba(255,255,255,0.07);
+  background: var(--bg-surface, rgba(255,255,255,0.04));
   margin: 20px 0;
 }
 
-/* Code rows */
+
 .modal-codes {
   display: flex;
   flex-direction: column;
@@ -165,9 +164,9 @@ function confirm() {
 .modal-code-badge {
   font-size: 11px;
   font-weight: 700;
-  color: #38a3f5;
-  background: rgba(56,163,245,0.15);
-  border: 1px solid rgba(56,163,245,0.3);
+  color: var(--accent, #38a3f5);
+  background: var(--accent-dim, rgba(56,163,245,0.15));
+  border: 1px solid var(--border-accent, rgba(56,163,245,0.3));
   border-radius: 6px;
   padding: 3px 9px;
   letter-spacing: 0.06em;
@@ -182,16 +181,16 @@ function confirm() {
 }
 .modal-code-en {
   font-size: 13px;
-  color: rgba(255,255,255,0.8);
+  color: var(--text-primary, #fff);
   line-height: 1.4;
 }
 .modal-code-th {
   font-size: 12px;
-  color: rgba(255,255,255,0.4);
+  color: var(--text-muted, rgba(255,255,255,0.35));
   line-height: 1.4;
 }
 
-/* Actions */
+
 .modal-actions {
   display: flex;
   gap: 10px;
@@ -201,25 +200,25 @@ function confirm() {
   height: 38px;
   padding: 0 20px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.55);
+  background: var(--bg-surface, rgba(255,255,255,0.04));
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+  color: var(--text-secondary, rgba(255,255,255,0.65));
   font-size: 13px;
   font-family: "DM Sans", sans-serif;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
 .btn-cancel:hover {
-  background: rgba(255,255,255,0.1);
-  color: #fff;
+  background: var(--bg-elevated, rgba(255,255,255,0.08));
+  color: var(--text-primary, #fff);
 }
 .btn-confirm {
   height: 38px;
   padding: 0 20px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #1a3d9e 0%, #38a3f5 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
   border: none;
-  color: #fff;
+  color: var(--text-primary, #fff);
   font-size: 13px;
   font-weight: 600;
   font-family: "DM Sans", sans-serif;
@@ -234,7 +233,7 @@ function confirm() {
   transform: translateY(-1px);
 }
 
-/* Transition */
+
 .modal-fade-enter-active,
 .modal-fade-leave-active { transition: opacity 0.2s, transform 0.2s; }
 .modal-fade-enter-from,
