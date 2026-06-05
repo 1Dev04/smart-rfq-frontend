@@ -218,10 +218,11 @@ function confirm() {
   border-radius: 10px;
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
   border: none;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary-help, #fff);
   font-size: 13px;
   font-weight: 600;
   font-family: "DM Sans", sans-serif;
+  
   cursor: pointer;
   display: flex;
   align-items: center;

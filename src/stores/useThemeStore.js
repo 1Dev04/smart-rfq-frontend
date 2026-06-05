@@ -92,6 +92,7 @@ const themeVars = {
       "--text-primary":   "#ffffff",
       "--text-secondary": "rgba(255,255,255,0.65)",
       "--text-muted":     "rgba(255,255,255,0.35)",
+      "--text-primary-help":   "#ffffff",
     },
     light: {
       "--bg-base":        "#f0f6ff",
@@ -108,6 +109,7 @@ const themeVars = {
       "--text-primary":   "#0a0f1e",
       "--text-secondary": "rgba(10,15,30,0.65)",
       "--text-muted":     "rgba(10,15,30,0.4)",
+      "--text-primary-help":   "#ffffff",
     },
   },
   mood: {
@@ -126,6 +128,7 @@ const themeVars = {
       "--text-primary":   "#ffffff",
       "--text-secondary": "rgba(255,255,255,0.65)",
       "--text-muted":     "rgba(255,255,255,0.35)",
+      "--text-primary-help":   "#ffffff",
     },
     light: {
       "--bg-base":        "#fdf8f0",
@@ -142,6 +145,7 @@ const themeVars = {
       "--text-primary":   "#12080f",
       "--text-secondary": "rgba(18,8,15,0.65)",
       "--text-muted":     "rgba(18,8,15,0.4)",
+      "--text-primary-help":   "#ffffff",
     },
   },
   vibe: {
@@ -160,6 +164,7 @@ const themeVars = {
       "--text-primary":   "#ffffff",
       "--text-secondary": "rgba(255,255,255,0.65)",
       "--text-muted":     "rgba(255,255,255,0.35)",
+      "--text-primary-help":   "#ffffff",
     },
     light: {
       "--bg-base":        "#f0fdf4",
@@ -176,6 +181,7 @@ const themeVars = {
       "--text-primary":   "#030d07",
       "--text-secondary": "rgba(3,13,7,0.65)",
       "--text-muted":     "rgba(3,13,7,0.4)",
+      "--text-primary-help":   "#ffffff",
     },
   },
   galaxy: {
@@ -194,6 +200,7 @@ const themeVars = {
       "--text-primary":   "#ffffff",
       "--text-secondary": "rgba(255,255,255,0.65)",
       "--text-muted":     "rgba(255,255,255,0.35)",
+      "--text-primary-help":   "#ffffff",
     },
     light: {
       "--bg-base":        "#f5f3ff",
@@ -210,6 +217,7 @@ const themeVars = {
       "--text-primary":   "#0b0718",
       "--text-secondary": "rgba(11,7,24,0.65)",
       "--text-muted":     "rgba(11,7,24,0.4)",
+      "--text-primary-help":   "#ffffff",
     },
   },
   technology: {
@@ -228,6 +236,7 @@ const themeVars = {
       "--text-primary":   "#ffffff",
       "--text-secondary": "rgba(255,255,255,0.65)",
       "--text-muted":     "rgba(255,255,255,0.35)",
+      "--text-primary-help":   "#ffffff",
     },
     light: {
       "--bg-base":        "#fff5f5",
@@ -244,6 +253,7 @@ const themeVars = {
       "--text-primary":   "#0f0a0a",
       "--text-secondary": "rgba(15,10,10,0.65)",
       "--text-muted":     "rgba(15,10,10,0.4)",
+      "--text-primary-help":   "#ffffff",
     },
   },
   sakura: {
@@ -262,6 +272,7 @@ const themeVars = {
     "--text-primary":   "#ffffff",
     "--text-secondary": "rgba(255,255,255,0.65)",
     "--text-muted":     "rgba(255,255,255,0.35)",
+    "--text-primary-help":   "#ffffff",
   },
   light: {
     "--bg-base":        "#fff1f7",
@@ -278,6 +289,7 @@ const themeVars = {
     "--text-primary":   "#1a0a10",
     "--text-secondary": "rgba(26,10,16,0.65)",
     "--text-muted":     "rgba(26,10,16,0.4)",
+    "--text-primary-help":   "#ffffff",
   },
 },
 };
@@ -305,6 +317,7 @@ export const useThemeStore = defineStore("theme", () => {
     root.style.setProperty("--bg", vars["--bg-base"] ?? "#0a0f1e");
     root.style.setProperty("--bg-secondary", vars["--bg-surface"] ?? "rgba(255,255,255,0.04)");
     root.style.setProperty("--text-primary", vars["--text-primary"] ?? "#ffffff");
+    root.style.setProperty("--text-primary-help", vars["--text-primary-help"] ?? "#ffffff");
     root.style.setProperty("--text-secondary", vars["--text-secondary"] ?? "rgba(255,255,255,0.65)");
     root.style.setProperty("--text-muted", vars["--text-muted"] ?? "rgba(255,255,255,0.35)");
     root.style.setProperty("--text", vars["--text-secondary"] ?? "rgba(255,255,255,0.65)");
