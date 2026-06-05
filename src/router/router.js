@@ -33,6 +33,12 @@ const routes = [
     meta: {requiresAuth: true, role: 'user'}
   },
   {
+    path: '/doc-request/create',
+    name: 'Create Doc',
+    component: () => import('../views/rfq/CreateDocument.vue'),
+    meta: {requiresAuth: true, role: 'user'}
+  },
+  {
     path: '/admin',
     name: 'AdminDashboard',
     component: () => import('../views/rfq/AdminDashboard.vue'),
