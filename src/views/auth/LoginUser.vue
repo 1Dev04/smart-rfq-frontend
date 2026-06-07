@@ -85,10 +85,12 @@ async function handleLogin() {
   if (passErr) { setError(passErr); return }
 
   loading.value = true; error.value = ''
-  try {
+  try {  
+
     await new Promise(r => setTimeout(r, 1400))
     auth.setAuth('mock-jwt-token', 'user', { email: cleanEmail + emailDomain })
     router.push('/doc-request-user')
+
   } catch { setError(currentLang.value.err_wrong) }
   finally { loading.value = false }
 }

@@ -92,8 +92,8 @@ watch([filteredRows, pageSize], () => { currentPage.value = 1; });
 <template>
   <AppLayout
     :title="t('doc-req-dashboard.title')"
-    role="User"
-    email="user.a@itg.co.th"
+    role="user"
+    email="Test.dev@itg.co.th"
   >
    
     <RfqFilterBar

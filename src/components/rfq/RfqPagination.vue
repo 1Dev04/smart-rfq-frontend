@@ -1,5 +1,21 @@
 <script setup>
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
+import { supportedLocales, setLocale } from "../../i18n";
+
+
+
+
+const { t, locale } = useI18n();
+const langOptions = supportedLocales;
+
+const lang = computed({
+  get: () => locale.value,
+  set: (value) => {
+    setLocale(value);
+  },
+});
+
 
 const props = defineProps({
   page: { type: Number, required: true },
@@ -35,10 +51,10 @@ function setSize(e) {
 
 <template>
   <div class="pagination-bar">
-    <span class="showing-text">Showing {{ from }} to {{ to }} of {{ total }} entity</span>
+    <span class="showing-text">{{ t('doc-req-dashboard.pagination.showing') }} {{ from }} {{ t('doc-req-dashboard.pagination.to') }} {{ to }} {{ t('doc-req-dashboard.pagination.of') }} {{ total }} {{ t('doc-req-dashboard.pagination.entity') }}</span>
 
     <div class="pagination">
-      <span class="show-label">Show</span>
+      <span class="show-label">{{ t('doc-req-dashboard.pagination.show') }}</span>
       <div class="select-wrap">
         <select :value="pageSize" class="size-select" @change="setSize">
           <option :value="10">10</option>

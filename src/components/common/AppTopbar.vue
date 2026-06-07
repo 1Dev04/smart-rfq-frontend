@@ -8,7 +8,6 @@ const props = defineProps({
   email: { type: String, default: "user@itg.co.th" },
 });
 
-/* ── Language ── */
 const { locale } = useI18n();
 const lang = computed({
   get: () => locale.value,
@@ -26,7 +25,7 @@ const langs = [
 const showLangMenu = ref(false);
 const currentLang = computed(() => langs.find((l) => l.code === lang.value) || langs[1]);
 
-/* ── Avatar ── */
+
 const avatarUrl = computed(
   () =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(props.role)}&background=38a3f5&color=ffffff&rounded=true&size=48`
@@ -35,13 +34,13 @@ const avatarUrl = computed(
 
 <template>
   <header class="topbar">
-    <!-- Page title -->
+    
     <h1 class="page-title">{{ title }}</h1>
 
-    <!-- Right cluster -->
+
     <div class="topbar-right">
 
-      <!-- Language picker -->
+    
       <div class="lang-picker">
         <button class="lang-btn" @click="showLangMenu = !showLangMenu">
           <span>{{ currentLang.flag }}</span>
@@ -91,7 +90,7 @@ const avatarUrl = computed(
         </Transition>
       </div>
 
-      <!-- Profile chip -->
+   
       <div class="profile-chip">
         <img :src="avatarUrl" :alt="role" class="profile-avatar" />
         <div class="profile-text">
@@ -193,7 +192,7 @@ const avatarUrl = computed(
   font-weight: 500;
 }
 
-/* Profile chip */
+
 .profile-chip {
   display: flex;
   align-items: center;
@@ -210,7 +209,7 @@ const avatarUrl = computed(
   border-radius: 999px;
   object-fit: cover;
   flex-shrink: 0;
-  border: 2px solid rgba(56,163,245,0.35);
+  border: 2px solid var(--orb-3, #60a5fa);
 }
 .profile-text {
   display: flex;
@@ -220,7 +219,7 @@ const avatarUrl = computed(
 .profile-role  { font-size: 12px; font-weight: 700; color: var(--text-h, #fff); }
 .profile-email { font-size: 11px; color: var(--text-muted, rgba(255,255,255,0.65)); }
 
-/* Transitions */
+
 .menu-drop-enter-active,
 .menu-drop-leave-active { transition: opacity 0.15s, transform 0.15s; }
 .menu-drop-enter-from,

@@ -1,20 +1,37 @@
 <script setup>
 import AppLayout       from "../../layouts/AppLayout.vue";
 import { useThemeStore, themes } from "../../stores/useThemeStore.js";
+import { supportedLocales, setLocale } from "../../i18n";
+import { useI18n } from "vue-i18n";
+import { computed } from "vue"
 
 const theme = useThemeStore();
+
+
+const { t, locale } = useI18n();
+const langOptions = supportedLocales;
+
+const lang = computed({
+  get: () => locale.value,
+  set: (value) => {
+    setLocale(value);
+  },
+});
+
+
+
 </script>
 
 <template>
-  <AppLayout title="Settings : Theme" role="User" email="user.a@itg.co.th">
+  <AppLayout :title="t('theme.name-theme')" role="User" email="user.a@itg.co.th">
     <div class="st-page">
 
      
       <section class="section">
         <div class="section-header">
           <div class="section-title-group">
-            <h3 class="section-title">Appearance</h3>
-            <p class="section-desc">Switch between dark and light mode</p>
+            <h3 class="section-title">{{ t('theme.section-title-theme') }}</h3>
+            <p class="section-desc">{{ t('theme.section-desc-theme') }}</p>
           </div>
         </div>
 
@@ -38,7 +55,7 @@ const theme = useThemeStore();
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
               </svg>
-              Dark
+              {{ t('theme.mode-moon') }}
               <span v-if="theme.isDark" class="mode-active-dot" />
             </div>
           </div>
@@ -72,7 +89,7 @@ const theme = useThemeStore();
                 <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
                 <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
               </svg>
-              Light
+              {{ t('theme.mode-sun') }}
               <span v-if="!theme.isDark" class="mode-active-dot" />
             </div>
           </div>
@@ -85,8 +102,8 @@ const theme = useThemeStore();
       <section class="section">
         <div class="section-header">
           <div class="section-title-group">
-            <h3 class="section-title">Color Theme</h3>
-            <p class="section-desc">Choose a color palette that fits your vibe</p>
+            <h3 class="section-title">{{ t('theme.name-color') }}</h3>
+            <p class="section-desc">{{ t('theme.des-color') }}</p>
           </div>
           <span class="current-badge">
             {{ themes.find(t => t.id === theme.themeId)?.name }}
@@ -134,15 +151,15 @@ const theme = useThemeStore();
       <section class="section">
         <div class="section-header">
           <div class="section-title-group">
-            <h3 class="section-title">Preview</h3>
-            <p class="section-desc">How your UI will look</p>
+            <h3 class="section-title">{{ t('theme.name-preview') }}</h3>
+            <p class="section-desc">{{ t('theme.des-preview') }}</p>
           </div>
         </div>
 
         <div class="preview-box">
         
           <div class="pv-topbar">
-            <div class="pv-title">Dashboard</div>
+            <div class="pv-title">{{ t('theme.name-dash') }}</div>
             <div class="pv-dot" />
           </div>
          
@@ -159,7 +176,7 @@ const theme = useThemeStore();
                 <div class="pv-bar w-80" />
                 <div class="pv-bar w-50" />
               </div>
-              <div class="pv-badge">Active</div>
+              <div class="pv-badge">{{ t('theme.preview-ac') }}</div>
             </div>
           </div>
         </div>

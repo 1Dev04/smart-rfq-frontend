@@ -3,8 +3,36 @@ import { ref, computed } from 'vue'
 import { useRFQDrawerStore } from '../../stores/rfqDrawer'
 
 const drawer = useRFQDrawerStore()
+const show = computed(() => drawer.showDrawer)
+const category = computed(() => drawer.selectedCategory)
 
-/* ── Transaction pipeline steps ── */
+const categoryTypeMap = {
+  'project-revenue':    'Project Revenue (I/O)',
+  'lpg':                'LPG 5Years & Yearly Insp',
+  'calibration':        'Calibration Gas Detector',
+  'project-expense':    'Project Expense (I/O)',
+  'trading-cylinder':   'Trading Gas Cylinder, Trading other',
+  'trading-bulk':       'Trading Gas Bulk',
+  'fix-asset-cylinder': 'Fix Asset Gas Cylinder',
+  'expense':            'Expense',
+  'spare-parts':        'Spare parts & Equipment For Gas',
+  'fix-asset':          'Fix Asset',
+}
+
+
+const prefilledType = computed(() =>
+  category.value ? categoryTypeMap[category.value.id] ?? '' : ''
+)
+
+
+const isTypeLocked = computed(() => !!prefilledType.value)
+
+import { watch } from 'vue'
+watch(prefilledType, (val) => {
+  if (val) form.value.type = val
+}, { immediate: true })
+
+
 const allSteps = [
   { id: 'user_fill',        label: 'User Fill\nData',       role: 'user'     },
   { id: 'purchase_accept',  label: 'Purchase\nAccept',      role: 'purchase' },
@@ -27,7 +55,7 @@ function stepStatus(index) {
   return 'pending'
 }
 
-/* ── Form data ── */
+
 const form = ref({
   projectName: '',
   glCode: '',
@@ -58,10 +86,10 @@ const form = ref({
   remark: '',
 })
 
-const typeOptions   = ['Next Item', 'Last Use']
+const typeOptions   = ['Project Revenue (I/O)', 'LPG 5Years & Yearly Insp', 'Calibration Gas Detector', 'Project Expense (I/O)', 'Trading Gas Cylinder, Trading other','Trading Gas Bulk', 'Fix Asset Gas Cylinder','Expense', 'Spare parts & Equipment For Gas', 'Fix Asset']
 const glCodeOptions = ['GL-1001', 'GL-1002', 'GL-2001', 'GL-3001', 'GL-4001']
 
-/* ── Footer actions by role ── */
+
 const footerActions = computed(() => {
   if (drawer.drawerRole === 'user') return [
     { label: 'Save Draft',   style: 'ghost',   action: 'draft' },
@@ -80,7 +108,7 @@ function handleAction(action) {
   if (action === 'cancel' || action === 'draft') {
     drawer.closeDrawer()
   }
-  // TODO: connect to store/api
+  
   console.log('Action:', action, form.value)
 }
 
@@ -92,7 +120,7 @@ function closeDrawer() {
 <template>
   <Teleport to="body">
 
-    <!-- Overlay: fade in/out -->
+   
     <Transition name="drawer-fade">
       <div
         v-if="drawer.showDrawer"
@@ -100,11 +128,11 @@ function closeDrawer() {
         @click.self="closeDrawer"
       >
 
-        <!-- Panel: slide in from right / slide out to right -->
+       
         <Transition name="drawer-slide" appear>
           <div class="drawer-panel" role="dialog" aria-modal="true">
 
-            <!-- ══ HEADER ══ -->
+            
             <div class="drawer-header">
               <div class="dh-left">
                 <div class="dh-badge">RFQ</div>
@@ -122,7 +150,7 @@ function closeDrawer() {
               </button>
             </div>
 
-            <!-- ══ PIPELINE STEPPER ══ -->
+           
             <div class="pipeline-wrap">
               <div class="pipeline-track">
                 <template v-for="(step, i) in allSteps" :key="step.id">
@@ -156,11 +184,10 @@ function closeDrawer() {
               </div>
             </div>
 
-            <!-- ══ FORM BODY ══ -->
             <div class="drawer-body">
               <div class="form-grid">
 
-                <!-- ─── LEFT COLUMN ─── -->
+                
                 <div class="form-col">
                   <div class="col-label">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -302,10 +329,10 @@ function closeDrawer() {
                   </div>
                 </div>
 
-                <!-- ─── DIVIDER ─── -->
+                
                 <div class="col-divider" />
 
-                <!-- ─── RIGHT COLUMN ─── -->
+               
                 <div class="form-col">
                   <div class="col-label">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -443,9 +470,7 @@ function closeDrawer() {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Sora:wght@600;700&display=swap');
 
-/* ══════════════════════════════════════
-   OVERLAY
-══════════════════════════════════════ */
+
 .drawer-overlay {
   position: fixed; inset: 0; z-index: 800;
   background: rgba(0,0,0,0.5);
@@ -456,9 +481,7 @@ function closeDrawer() {
 .drawer-fade-enter-from,
 .drawer-fade-leave-to { opacity: 0; }
 
-/* ══════════════════════════════════════
-   PANEL
-══════════════════════════════════════ */
+
 .drawer-panel {
   position: fixed; top: 0; right: 0; bottom: 0;
   width: 100%;
@@ -475,7 +498,7 @@ function closeDrawer() {
   box-shadow: -16px 0 60px rgba(0,0,0,0.12);
 }
 
-/* ── Slide animation ── */
+
 .drawer-slide-enter-active {
   animation: slideInFromRight 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -491,9 +514,7 @@ function closeDrawer() {
   to   { transform: translateX(100%); opacity: 0; }
 }
 
-/* ══════════════════════════════════════
-   HEADER
-══════════════════════════════════════ */
+
 .drawer-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 24px;
@@ -529,9 +550,7 @@ function closeDrawer() {
   border-color: rgba(239,68,68,0.3);
 }
 
-/* ══════════════════════════════════════
-   PIPELINE STEPPER
-══════════════════════════════════════ */
+
 .pipeline-wrap {
   padding: 14px 24px;
   border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.07));

@@ -4,11 +4,10 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
 const router = useRouter();
 
-
 const auth = useAuthStore();
 
 function logout() {
-  auth.logout();        
+  auth.logout();
   router.push("/login");
 }
 
@@ -35,17 +34,17 @@ const navItems = [
            <rect x="14" y="14" width="7" height="7"/>
            <rect x="3" y="14" width="7" height="7"/>`,
   },
- {
-  to: "/theme",
-  label: "Theme",
-  icon: `
+  {
+    to: "/theme",
+    label: "Theme",
+    icon: `
     <path d="M12 2C6.48 2 2 6.03 2 11c0 2.5 1.19 4.74 3.08 6.32C6.24 18.31 7.56 19 9 19h1c.55 0 1 .45 1 1 0 1.66 1.34 3 3 3 4.97 0 9-4.48 9-10S17.52 2 12 2z"/>
     <circle cx="6.5" cy="11.5" r="1.5"/>
     <circle cx="9.5" cy="7.5" r="1.5"/>
     <circle cx="14.5" cy="7.5" r="1.5"/>
     <circle cx="17.5" cy="11.5" r="1.5"/>
   `,
-}
+  },
 ];
 </script>
 
@@ -76,7 +75,8 @@ const navItems = [
       >
         <span class="sb-item-indicator" />
         <svg
-          width="20" height="20"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -91,17 +91,14 @@ const navItems = [
       </router-link>
     </nav>
 
-    <div style="flex:1" />
+    <div style="flex: 1" />
 
     <!-- Logout -->
     <div class="sb-divider" />
-    <button
-      class="sb-item sb-logout"
-      title="Logout"
-      @click="logout"
-    >
+    <button class="sb-item sb-logout" title="Logout" @click="logout">
       <svg
-        width="20" height="20"
+        width="20"
+        height="20"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -124,14 +121,14 @@ const navItems = [
 .sidebar {
   width: 62px;
   min-height: 100vh;
-  background: var(--bg-elevated, rgba(255,255,255,0.05));
-  border-right: 1px solid var(--border, rgba(255,255,255,0.08));
+  background: var(--bg-elevated, rgba(255, 255, 255, 0.05));
+  border-right: 1px solid var(--border, rgba(255, 255, 255, 0.08));
   backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 16px 0 20px;
-  transition: width 0.28s cubic-bezier(0.4,0,0.2,1);
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   flex-shrink: 0;
   position: sticky;
@@ -140,7 +137,9 @@ const navItems = [
   z-index: 20;
   font-family: "DM Sans", sans-serif;
 }
-.sidebar.expanded { width: 170px; }
+.sidebar.expanded {
+  width: 170px;
+}
 
 /* Logo */
 .sb-logo {
@@ -153,13 +152,14 @@ const navItems = [
   overflow: hidden;
 }
 .sb-logo-img {
-  width: 34px; height: 34px;
+  width: 34px;
+  height: 34px;
   object-fit: contain;
   border-radius: 8px;
-  background: var(--bg-surface, rgba(255,255,255,0.12));
+  background: var(--bg-surface, rgba(255, 255, 255, 0.12));
   padding: 2px;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 8px var(--accent-glow, rgba(56,163,245,0.3)));
+  filter: drop-shadow(0 2px 8px var(--accent-glow, rgba(56, 163, 245, 0.3)));
 }
 .sb-logo-text {
   font-family: "Sora", sans-serif;
@@ -172,7 +172,7 @@ const navItems = [
 .sb-divider {
   width: calc(100% - 24px);
   height: 1px;
-  background: var(--bg-secondary, rgba(255,255,255,0.08));
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.08));
   margin: 6px 0 12px;
   flex-shrink: 0;
 }
@@ -191,10 +191,12 @@ const navItems = [
   gap: 12px;
   padding: 10px 10px 10px 14px;
   border-radius: 10px;
-  color: var(--text-muted, rgba(255,255,255,0.45));
+  color: var(--text-muted, rgba(255, 255, 255, 0.45));
   text-decoration: none;
   position: relative;
-  transition: background 0.18s, color 0.18s;
+  transition:
+    background 0.18s,
+    color 0.18s;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -204,22 +206,26 @@ const navItems = [
   width: 100%;
 }
 .sb-item:hover {
-  background: var(--accent-dim, rgba(56,163,245,0.1));
-  color: var(--text, rgba(255,255,255,0.8));
+  background: var(--accent-dim, rgba(56, 163, 245, 0.1));
+  color: var(--text, rgba(255, 255, 255, 0.8));
 }
 .sb-item.active {
-  background: var(--accent-bg, rgba(56,163,245,0.18));
+  background: var(--accent-bg, rgba(56, 163, 245, 0.18));
   color: var(--accent, #38a3f5);
 }
 .sb-item-indicator {
   position: absolute;
-  left: 0; top: 25%; bottom: 25%;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
   width: 3px;
   border-radius: 0 3px 3px 0;
   background: transparent;
   transition: background 0.18s;
 }
-.sb-item.active .sb-item-indicator { background: var(--accent, #38a3f5); }
+.sb-item.active .sb-item-indicator {
+  background: var(--accent, #38a3f5);
+}
 .sb-label {
   font-size: 13px;
   font-weight: 500;
@@ -228,18 +234,22 @@ const navItems = [
 
 /* Logout */
 .sb-logout {
-  color: var(--text-muted, rgba(255,100,100,0.55));
+  color: var(--text-muted, rgba(255, 100, 100, 0.55));
   margin: 0 8px;
   width: calc(100% - 16px);
 }
 .sb-logout:hover {
-  background: rgba(239,68,68,0.12);
+  background: rgba(239, 68, 68, 0.12);
   color: #f87171;
 }
 
 /* Transitions */
 .fade-text-enter-active,
-.fade-text-leave-active  { transition: opacity 0.15s; }
+.fade-text-leave-active {
+  transition: opacity 0.15s;
+}
 .fade-text-enter-from,
-.fade-text-leave-to      { opacity: 0; }
+.fade-text-leave-to {
+  opacity: 0;
+}
 </style>

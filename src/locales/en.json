@@ -1,6 +1,45 @@
 {
   "doc-req-dashboard": {
-    "title": "Document Request Dashboard"
+    "title": "Document Request Dashboard",
+    "rfq-no": "RFQ NO.",
+    "type": "Type",
+    "list": "List",
+    "status": "Status",
+    "contact-user": "Contact User",
+    "filter": {
+      "id": "ID",
+      "rfq-no": "RFQ NO.",
+      "type": "TYPE",
+      "list": "LIST",
+      "qty": "QTY",
+      "uom": "UOM",
+      "status": "STATUS",
+      "requester": "REQUESTER",
+      "purchaser": "PURCHASER",
+      "created": "CREATED",
+      "updated": "UPDATED",
+      "l&t": "L/T (DAYS)"
+    },
+    "pagination": {
+      "showing": "Showing",
+      "to": "to",
+      "of": "of",
+      "entity": "entity",
+      "show": "Show"
+    }
+  },
+  "theme": {
+    "name-theme": "Theme",
+    "section-title-theme": "Appearance",
+    "section-desc-theme": "Switch between dark and light mode",
+    "mode-moon": "Dark",
+    "mode-sun": "Light",
+    "name-color": "Color Theme",
+    "des-color": "Choose a color palette that fits your vibe",
+    "name-preview": "Preview",
+    "des-preview": "How your UI will look",
+    "name-dash": "Dashboard",
+    "preview-ac": "Active"
   },
   "help": {
     "title": "Help",

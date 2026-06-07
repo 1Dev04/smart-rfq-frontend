@@ -1,7 +1,21 @@
 <script setup>
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { computed } from "vue";
+import { supportedLocales, setLocale } from "../../i18n";
+
 
 const router = useRouter();
+
+const { t, locale } = useI18n();
+const langOptions = supportedLocales;
+
+const lang = computed({
+  get: () => locale.value,
+  set: (value) => {
+    setLocale(value);
+  },
+});
 
 defineProps({
   rows: {
@@ -24,24 +38,24 @@ const statusMap = {
       <table class="data-table">
         <thead>
           <tr>
-            <th class="col-id">Id</th>
-            <th class="col-rfq">RFQ No.</th>
-            <th class="col-type">Type</th>
-            <th class="col-list">List</th>
-            <th class="col-num">Qty</th>
-            <th class="col-uom">UOM</th>
-            <th class="col-status">Status</th>
-            <th class="col-person">Requester</th>
-            <th class="col-person">Purchaser</th>
-            <th class="col-date">Created</th>
-            <th class="col-date">Updated</th>
-            <th class="col-lt">L/T (days)</th>
+            <th class="col-id">{{ t('doc-req-dashboard.filter.id') }}</th>
+            <th class="col-rfq">{{ t('doc-req-dashboard.filter.rfq-no') }}</th>
+            <th class="col-type">{{ t('doc-req-dashboard.filter.type') }}</th>
+            <th class="col-list">{{ t('doc-req-dashboard.filter.list') }}</th>
+            <th class="col-num cell-center">{{ t('doc-req-dashboard.filter.qty') }}</th>
+            <th class="col-uom cell-center">{{ t('doc-req-dashboard.filter.uom') }}</th>
+            <th class="col-status cell-center">{{ t('doc-req-dashboard.filter.status') }}</th>
+            <th class="col-person">{{ t('doc-req-dashboard.filter.requester') }}</th>
+            <th class="col-person">{{ t('doc-req-dashboard.filter.purchaser') }}</th>
+            <th class="col-date">{{ t('doc-req-dashboard.filter.created') }}</th>
+            <th class="col-date">{{ t('doc-req-dashboard.filter.updated') }}</th>
+            <th class="col-lt">{{ t('doc-req-dashboard.filter.l&t') }}</th>
           </tr>
         </thead>
         <tbody>
           <template v-if="rows.length">
             <tr v-for="row in rows" :key="row.id" class="data-row">
-              <td class="col-id cell-center">{{ row.displayNo ?? row.id }}</td>
+              <td class="col-id ">{{ row.displayNo ?? row.id }}</td>
               <td class="col-rfq">
                 <a class="rfq-link" @click.prevent="router.push(`/doc-request/${row.id}`)">
                   {{ row.rfqNo }}

@@ -1,6 +1,22 @@
 <script setup>
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { computed } from "vue";
+import { supportedLocales, setLocale } from "../../i18n";
+
+
 const router = useRouter();
+
+const { t, locale } = useI18n();
+const langOptions = supportedLocales;
+
+const lang = computed({
+  get: () => locale.value,
+  set: (value) => {
+    setLocale(value);
+  },
+});
+
 
 const props = defineProps({
   filters: {
@@ -38,7 +54,7 @@ function openDrawer() {
 <template>
   <div class="filter-bar">
     <div class="filter-group">
-      <label class="filter-label">RFQ No.</label>
+      <label class="filter-label">{{ t('doc-req-dashboard.rfq-no') }}</label>
       <input
         :value="filters.rfqNo"
         class="filter-input"
@@ -49,7 +65,7 @@ function openDrawer() {
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">Type</label>
+      <label class="filter-label">{{ t('doc-req-dashboard.type') }}</label>
       <input
         :value="filters.type"
         class="filter-input w-sm"
@@ -60,7 +76,7 @@ function openDrawer() {
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">List</label>
+      <label class="filter-label">{{ t('doc-req-dashboard.list') }}</label>
       <input
         :value="filters.list"
         class="filter-input"
@@ -71,7 +87,7 @@ function openDrawer() {
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">Status</label>
+      <label class="filter-label">{{ t('doc-req-dashboard.status') }}</label>
       <div class="select-wrap">
         <select
           :value="filters.status"
@@ -102,7 +118,7 @@ function openDrawer() {
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">Contact User</label>
+      <label class="filter-label">{{ t('doc-req-dashboard.contact-user') }}</label>
       <input
         :value="filters.contactUser"
         class="filter-input w-lg"

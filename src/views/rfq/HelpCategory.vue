@@ -19,8 +19,10 @@ const lang = computed({
   },
 });
 
+
 const selected = ref(null);
 
+/* ── Category data ── */
 const categories = ref([
   {
     id: "project-revenue",
@@ -216,6 +218,7 @@ const categories = ref([
     />
 
   </AppLayout>
+ 
 </template>
 
 <style scoped>

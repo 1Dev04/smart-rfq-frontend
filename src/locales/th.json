@@ -1,6 +1,45 @@
 {
   "doc-req-dashboard": {
-    "title": "คำขอเอกสารแดชบอร์ด"
+    "title": "คำขอเอกสารแดชบอร์ด",
+    "rfq-no": "หมายเลข RFQ",
+    "type": "ประเภท",
+    "list": "รายการ",
+    "status": "สถานะ",
+    "contact-user": "ติดต่อผู้ใช้",
+    "filter": {
+      "id": "รหัส",
+      "rfq-no": "หมายเลข RFQ",
+      "type": "ประเภท",
+      "list": "รายการ",
+      "qty": "จำนวน",
+      "uom": "หน่วย",
+      "status": "สถานะ",
+      "requester": "ผู้ขอ",
+      "purchaser": "ผู้ซื้อ",
+      "created": " วันที่สร้าง",
+      "updated": "วันที่อัปเดต",
+      "l&t": "L/T (วัน)"
+    },
+    "pagination": {
+      "showing": "แสดง",
+      "to": "ถึง",
+      "of": "จากทั้งหมด",
+      "entity": "รายการ",
+      "show": "แสดง"
+    }
+  },
+  "theme": {
+    "name-theme": "ธีม",
+    "section-title-theme": "รูปร่าง",
+    "section-desc-theme": "สลับระหว่างโหมดมืดและโหมดสว่าง",
+    "mode-moon": "มืด",
+    "mode-sun": "แสง",
+    "name-color": "ธีมสี",
+    "des-color": "เลือกโทนสีที่เข้ากับสไตล์ของคุณ",
+    "name-preview": "ตัวอย่าง",
+    "des-preview": "หน้าตาของส่วนติดต่อผู้ใช้ของคุณจะเป็นอย่างไร",
+    "name-dash": "แดชบอร์ด",
+    "preview-ac": "คล่องแคล่ว"
   },
   "help": {
     "title": "ช่วยเหลือ",

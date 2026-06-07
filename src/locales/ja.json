@@ -1,10 +1,55 @@
 {
   "doc-req-dashboard": {
-    "title": "文書依頼ダッシュボード"
+    "title": "文書依頼ダッシュボード",
+    "rfq-no": "見積依頼番号",
+    "type": "種別",
+    "list": "品目",
+    "status": "状況",
+    "contact-user": "ユーザーへ連絡",
+
+    "filter": {
+      "id": "ID",
+      "rfq-no": "RFQ番号",
+      "type": "種別",
+      "list": "品目",
+      "qty": "数量",
+      "uom": "単位",
+      "status": "状況",
+      "requester": "申請者",
+      "purchaser": "購買担当者",
+      "created": "作成日時",
+      "updated": "更新日時",
+      "l&t": "納期（日）"
+    },
+    "pagination": {
+      "showing": "表示",
+      "to": "～",
+      "of": "全",
+      "entity": "件",
+      "show": "表示"
+    }
   },
+
+  "theme": {
+    "name-theme": "テーマ",
+    "section-title-theme": "表示設定",
+    "section-desc-theme": "ライトモードとダークモードを切り替えます",
+    "mode-moon": "ダーク",
+    "mode-sun": "ライト",
+
+    "name-color": "カラーテーマ",
+    "des-color": "お好みのカラーテーマを選択してください",
+
+    "name-preview": "プレビュー",
+    "des-preview": "画面の表示イメージ",
+
+    "name-dash": "ダッシュボード",
+    "preview-ac": "選択中"
+  },
+
   "help": {
     "title": "ヘルプ",
-    "subtitle": "カテゴリを選択",
-    "hint": "ホバーでプレビュー · クリックして選択"
+    "subtitle": "カテゴリーを選択してください",
+    "hint": "カーソルを合わせてプレビュー・クリックして選択"
   }
 }
