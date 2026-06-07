@@ -26,158 +26,74 @@ const selected = ref(null);
 const categories = ref([
   {
     id: "project-revenue",
-    name: { en: "Project Revenue (I/O)", th: "โครงการรายได้ (I/O)", ja: "プロジェクト収益 (I/O)" },
+    nameKey: "category-name.name-project-revenue",
     codes: [
-      {
-        code: "PS",
-        desc: {
-          en: "Project Revenue IO (Engineering, Sale dept.)",
-          th: "โครงการวิศวกรรมและฝ่ายขาย",
-          ja: "エンジニアリング・営業部門"
-        }
-      }
+      { code: "PS", descKey: "codes.desc-project-revenue" }
     ]
   },
   {
     id: "lpg",
-    name: { en: "LPG 5Years & Yearly Insp", th: "LPG ตรวจสอบ 5 ปี/ประจำปี", ja: "LPG 5年・年次検査" },
+    nameKey: "category-name.name-lpg-5year",
     codes: [
-      {
-        code: "PS",
-        desc: {
-          en: "Project Revenue IO (Engineering, Sale dept.)",
-          th: "โครงการวิศวกรรมและฝ่ายขาย",
-          ja: "エンジニアリング・営業部門"
-        }
-      }
+      { code: "PS", descKey: "codes.desc-lpg-5year" }
     ]
   },
   {
     id: "calibration",
-    name: { en: "Calibration Gas Detector", th: "สอบเทียบเครื่องตรวจจับก๊าซ", ja: "ガス検知器校正" },
+    nameKey: "category-name.name-calibration",
     codes: [
-      {
-        code: "SE",
-        desc: {
-          en: "Service Charge, Rental",
-          th: "ค่าบริการและค่าเช่า",
-          ja: "サービス料・レンタル"
-        }
-      }
+      { code: "SE", descKey: "codes.desc-service-charge" }
     ]
   },
   {
     id: "project-expense",
-    name: { en: "Project Expense (I/O)", th: "ค่าใช้จ่ายโครงการ (I/O)", ja: "プロジェクト経費 (I/O)" },
+    nameKey: "category-name.name-project-expense",
     codes: [
-      {
-        code: "SE",
-        desc: {
-          en: "Service Charge, Rental",
-          th: "ค่าบริการและค่าเช่า",
-          ja: "サービス料・レンタル"
-        }
-      },
-      {
-        code: "PM",
-        desc: {
-          en: "Project Expense IO (Preventive Maintenance CAR, MACHINE)",
-          th: "งานซ่อมบำรุงและเครื่องจักร โครงการค่าใช้จ่าย",
-          ja: "予防保全（車両・機械）"
-        }
-      }
+      { code: "SE", descKey: "codes.desc-service-charge" },
+      { code: "PM", descKey: "codes.desc-pm" }
     ]
   },
   {
     id: "trading-cylinder",
-    name: { en: "Trading Gas Cylinder, Trading other", th: "ซื้อขายถังก๊าซและสินค้าอื่น", ja: "ガスシリンダー取引・その他" },
+    nameKey: "category-name.name-trading-cylinder",
     codes: [
-      {
-        code: "TC",
-        desc: {
-          en: "Trading Gas Cylinder, Trading others",
-          th: "ถังก๊าซและสินค้าอื่นเพื่อการค้า",
-          ja: "ガスシリンダー・その他取引"
-        }
-      }
+      { code: "TC", descKey: "codes.desc-trading-gas-cylinder" }
     ]
   },
   {
     id: "trading-bulk",
-    name: { en: "Trading Gas Bulk", th: "ซื้อขายก๊าซ Bulk", ja: "バルクガス取引" },
+    nameKey: "category-name.name-trading-bulk",
     codes: [
-      {
-        code: "TB",
-        desc: {
-          en: "Trading Gas Bulk",
-          th: "แก๊สเทกองเพื่อการค้า",
-          ja: "バルクガス取引"
-        }
-      }
+      { code: "TB", descKey: "codes.desc-trading-gas-bulk" }
     ]
   },
   {
     id: "fix-asset-cylinder",
-    name: { en: "Fix Asset Gas Cylinder", th: "สินทรัพย์ถาวร ถังก๊าซ", ja: "固定資産ガスシリンダー" },
+    nameKey: "category-name.name-fix-asset-cylinder",
     codes: [
-      {
-        code: "AC",
-        desc: {
-          en: "Fixed Asset Gas Cylinder",
-          th: "ถังก๊าซสินทรัพย์ถาวร",
-          ja: "固定資産ガスシリンダー"
-        }
-      }
+      { code: "AC", descKey: "codes.desc-fixed-asset-gas" }
     ]
   },
   {
     id: "expense",
-    name: { en: "Expense", th: "ค่าใช้จ่าย", ja: "経費" },
+    nameKey: "category-name.name-expense",
     codes: [
-      {
-        code: "SE",
-        desc: {
-          en: "Service Charge, Rental",
-          th: "ค่าบริการและค่าเช่า",
-          ja: "サービス料・レンタル"
-        }
-      },
-      {
-        code: "EX",
-        desc: {
-          en: "Expense (General expense)",
-          th: "ค่าใช้จ่ายทั่วไป",
-          ja: "一般経費"
-        }
-      }
+      { code: "SE", descKey: "codes.desc-service-charge" },
+      { code: "EX", descKey: "codes.desc-expense-general" }
     ]
   },
   {
     id: "spare-parts",
-    name: { en: "Spare parts & Equipment For Gas", th: "อะไหล่และอุปกรณ์สำหรับก๊าซ", ja: "ガス用スペアパーツ・機器" },
+    nameKey: "category-name.name-spare-parts",
     codes: [
-      {
-        code: "CS",
-        desc: {
-          en: "Central Store",
-          th: "คลังสินค้าส่วนกลาง",
-          ja: "セントラルストア"
-        }
-      }
+      { code: "CS", descKey: "codes.desc-central-store" }
     ]
   },
   {
     id: "fix-asset",
-    name: { en: "Fix Asset", th: "สินทรัพย์ถาวร", ja: "固定資産" },
+    nameKey: "category-name.name-fix-asset",
     codes: [
-      {
-        code: "FA",
-        desc: {
-          en: "Fixed Asset (Specified number from Account)",
-          th: "สินทรัพย์ถาวร - ระบุเลขบัญชี",
-          ja: "固定資産（勘定科目指定番号）"
-        }
-      }
+      { code: "FA", descKey: "codes.desc-fixed-asset-specified" }
     ]
   },
 ]);

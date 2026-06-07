@@ -51,5 +51,38 @@
     "title": "ヘルプ",
     "subtitle": "カテゴリーを選択してください",
     "hint": "カーソルを合わせてプレビュー・クリックして選択"
+  },
+  "category-card": {
+    "click-select": "クリックして選択"
+  },
+  "category-modal": {
+    "selected-category": "選択したカテゴリ",
+    "create-document": "ドキュメントを作成",
+    "cancel": "キャンセル"
+  },
+  "category-name": {
+    "name-project-revenue": "プロジェクト収益 (I/O)",
+    "name-lpg-5year": "LPG 5年・年次検査",
+    "name-calibration": "ガス検知器校正",
+    "name-project-expense": "プロジェクト経費 (I/O)",
+    "name-trading-cylinder": "ガスシリンダー取引・その他",
+    "name-trading-bulk": "バルクガス取引",
+    "name-fix-asset-cylinder": "固定資産ガスシリンダー",
+    "name-expense": "経費",
+    "name-spare-parts": "ガス用スペアパーツ・機器",
+    "name-fix-asset": "固定資産"
+  },
+  "codes": {
+    "desc-project-revenue": "エンジニアリング・営業部門",
+    "desc-service-charge": "サービス料・レンタル",
+    "desc-lpg-5year": "LPG 5年・年次検査",
+    "desc-calibration": "ガス検知器校正",
+    "desc-trading-gas-cylinder": "ガスシリンダー・その他取引",
+    "desc-trading-gas-bulk": "バルクガス取引",
+    "desc-fixed-asset-gas": "固定資産ガスシリンダー",
+    "desc-central-store": "セントラルストア",
+    "desc-expense-general": "一般経費",
+    "desc-fixed-asset-specified": "固定資産（勘定科目指定番号",
+    "desc-pm": "プロジェクト経費（予防保全：車両・機械"
   }
 }

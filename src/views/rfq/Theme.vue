@@ -59,10 +59,6 @@ const lang = computed({
               <span v-if="theme.isDark" class="mode-active-dot" />
             </div>
           </div>
-
-         
-
-      
           <div
             :class="['mode-card', { active: !theme.isDark }]"
             @click="theme.isDark && theme.toggleDark()"
@@ -95,10 +91,7 @@ const lang = computed({
           </div>
         </div>
       </section>
-
       <div class="section-divider" />
-
-   
       <section class="section">
         <div class="section-header">
           <div class="section-title-group">
@@ -109,7 +102,6 @@ const lang = computed({
             {{ themes.find(t => t.id === theme.themeId)?.name }}
           </span>
         </div>
-
         <div class="theme-grid">
           <button
             v-for="t in themes"
@@ -117,7 +109,6 @@ const lang = computed({
             :class="['theme-card', { active: theme.themeId === t.id }]"
             @click="theme.setTheme(t.id)"
           >
-            
             <div class="swatch-row">
               <div
                 v-for="(color, i) in t.preview"
@@ -126,14 +117,10 @@ const lang = computed({
                 :style="{ background: color }"
               />
             </div>
-
-          
             <div class="theme-info">
               <span class="theme-name">{{ t.name }}</span>
               <span class="theme-desc">{{ t.desc }}</span>
             </div>
-
-            
             <div v-if="theme.themeId === t.id" class="theme-check">
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                 <path d="M2.5 7L5.5 10L11.5 4"

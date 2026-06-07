@@ -3,9 +3,6 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { supportedLocales, setLocale } from "../../i18n";
 
-
-
-
 const { t, locale } = useI18n();
 const langOptions = supportedLocales;
 
@@ -15,7 +12,6 @@ const lang = computed({
     setLocale(value);
   },
 });
-
 
 const props = defineProps({
   page: { type: Number, required: true },

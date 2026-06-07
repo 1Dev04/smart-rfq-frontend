@@ -24,8 +24,6 @@ const langs = [
 ];
 const showLangMenu = ref(false);
 const currentLang = computed(() => langs.find((l) => l.code === lang.value) || langs[1]);
-
-
 const avatarUrl = computed(
   () =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(props.role)}&background=38a3f5&color=ffffff&rounded=true&size=48`
@@ -34,13 +32,8 @@ const avatarUrl = computed(
 
 <template>
   <header class="topbar">
-    
     <h1 class="page-title">{{ title }}</h1>
-
-
     <div class="topbar-right">
-
-    
       <div class="lang-picker">
         <button class="lang-btn" @click="showLangMenu = !showLangMenu">
           <span>{{ currentLang.flag }}</span>
@@ -75,7 +68,6 @@ const avatarUrl = computed(
                 style="margin-left:auto"
                 width="13" height="13"
                 viewBox="0 0 14 14" fill="none"
-
               >
                 <path
                   d="M2.5 7L5.5 10L11.5 4"
@@ -90,7 +82,6 @@ const avatarUrl = computed(
         </Transition>
       </div>
 
-   
       <div class="profile-chip">
         <img :src="avatarUrl" :alt="role" class="profile-avatar" />
         <div class="profile-text">
@@ -98,7 +89,6 @@ const avatarUrl = computed(
           <span class="profile-email">{{ email }}</span>
         </div>
       </div>
-
     </div>
   </header>
 </template>

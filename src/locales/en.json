@@ -45,5 +45,41 @@
     "title": "Help",
     "subtitle": "Select Category",
     "hint": "Hover to preview · Click to select"
-  }
+  },
+  "category-card": {
+    "click-select": "click to select"
+  },
+  "category-modal": {
+    "selected-category": "Selected Category",
+    "create-document": "Create Document",
+    "cancel": "Cancle"
+  },
+    "category-name": {
+      "name-project-revenue": "Project Revenue (I/O)",
+      "name-lpg-5year" : "LPG 5Years & Yearly Insp",
+      "name-calibration": "Calibration Gas Detector",
+      "name-project-expense": "Project Expense (I/O)",
+      "name-trading-cylinder": "Trading Gas Cylinder, Trading other",
+      "name-trading-bulk": "Trading Gas Bulk",
+      "name-fix-asset-cylinder": "Fix Asset Gas Cylinder",
+      "name-expense": "Expense",
+      "name-spare-parts": "Spare parts & Equipment For Gas",
+      "name-fix-asset": "Fix Asset"
+    },
+    "codes": {
+      "desc-project-revenue": "Project Revenue IO (Engineering, Sale dept.)",
+      "desc-service-charge": "Service Charge, Rental",
+      "desc-lpg-5year":"LPG 5Years & Yearly Insp",
+      "desc-calibration": "Calibration Gas Detector",
+      "desc-trading-gas-cylinder":"Trading Gas Cylinder, Trading others",
+      "desc-trading-gas-bulk": "Trading Gas Bulk",
+      "desc-fixed-asset-gas": "Fixed Asset Gas Cylinder",
+      "desc-central-store": "Central Store",
+      "desc-expense-general": "Expense (General expense)",
+      "desc-fixed-asset-specified": "Fixed Asset (Specified number from Account)",
+      "desc-pm": "Project Expense IO (Preventive Maintenance CAR, MACHINE)"
+    }
 }
+
+
+

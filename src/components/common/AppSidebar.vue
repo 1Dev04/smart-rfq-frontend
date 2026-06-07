@@ -35,6 +35,14 @@ const navItems = [
            <rect x="3" y="14" width="7" height="7"/>`,
   },
   {
+    to: "/audit-log",
+    label: "Audit Log",
+    icon: `
+  <path d="M12 8v4l3 3"/>
+  <circle cx="12" cy="12" r="9"/>
+`,
+  },
+  {
     to: "/theme",
     label: "Theme",
     icon: `

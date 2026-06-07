@@ -27,6 +27,12 @@ const routes = [
     meta: {requiresAuth: true, role: 'user' }
   },
   {
+    path: '/audit-log',
+    name: 'Audit Log',
+    component: () => import('../views/rfq/AuditLog.vue'),
+    meta: {requiresAuth: true, role: 'user'}
+  },
+  {
     path: '/theme',
     name: 'Theme',
     component: () => import('../views/rfq/Theme.vue'),

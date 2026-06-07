@@ -2,6 +2,18 @@
 import { computed } from "vue"
 import { useRFQDrawerStore } from '../../stores/rfqDrawer'
 import CreateDocument from '../../views/rfq/CreateDocument.vue'
+import { useI18n } from "vue-i18n";
+import { supportedLocales, setLocale } from "../../i18n";
+
+const { t, locale } = useI18n();
+const langOptions = supportedLocales;
+
+const lang = computed({
+  get: () => locale.value,
+  set: (value) => {
+    setLocale(value);
+  },
+});
 
 const drawer = useRFQDrawerStore()
 
@@ -36,9 +48,9 @@ function handleCreateDocument() {
           </svg>
         </div>
 
-        <p class="modal-label">Selected Category</p>
+        <p class="modal-label">{{ t('category-modal.selected-category') }}</p>
         <h2 class="modal-title">
-          {{ category?.name[lang] || category?.name?.en }}
+          {{ t(category.nameKey) }}
         </h2>
 
         <div class="modal-divider" />
@@ -47,8 +59,8 @@ function handleCreateDocument() {
           <div v-for="c in category?.codes" :key="c.code" class="modal-code-row">
             <span class="modal-code-badge">{{ c.code }}</span>
             <div class="modal-code-info">
-              <span class="modal-code-en">{{ c.desc.en }}</span>
-              <span v-if="c.desc.th" class="modal-code-th">{{ c.desc.th }}</span>
+              <span class="modal-code-en">{{ t(c.descKey) }}</span>
+           
             </div>
           </div>
         </div>
@@ -56,14 +68,14 @@ function handleCreateDocument() {
         <div class="modal-divider" />
 
         <div class="modal-actions">
-          <button class="btn-cancel" @click="emit('close')">Cancel</button>
+          <button class="btn-cancel" @click="emit('close')">{{ t('category-modal.cancel') }}</button>
           <button class="btn-confirm" @click="handleCreateDocument">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2.2"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 5v14M5 12l7 7 7-7"/>
             </svg>
-            Create Document
+            {{ t('category-modal.create-document') }}
           </button>
         </div>
 

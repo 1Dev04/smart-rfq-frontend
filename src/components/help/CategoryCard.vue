@@ -1,4 +1,18 @@
 <script setup>
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
+import { supportedLocales, setLocale } from "../../i18n";
+
+const { t, locale } = useI18n();
+const langOptions = supportedLocales;
+
+const lang = computed({
+  get: () => locale.value,
+  set: (value) => {
+    setLocale(value);
+  },
+});
+
 defineProps({
   category: { type: Object, required: true },
   lang:     { type: String, default: "en" },
@@ -22,7 +36,7 @@ const emit = defineEmits(["select"]);
           <polyline points="14 2 14 8 20 8"/>
         </svg>
       </div>
-      <h3 class="card-title">{{ category.name[lang] || category.name.en }}</h3>
+     <h3 class="card-title">{{ t(category.nameKey) }}</h3>
     </div>
 
 
@@ -33,13 +47,13 @@ const emit = defineEmits(["select"]);
         class="code-row"
       >
         <span class="code-badge">{{ c.code }}</span>
-        <span class="code-desc">{{ c.desc[lang] || c.desc.en }}</span>
+        <span class="code-desc">{{ t(c.descKey) }}</span>
       </div>
     </div>
 
     
     <div class="card-footer">
-      <span class="footer-hint">Click to select</span>
+      <span class="footer-hint">{{ t('category-card.click-select') }}</span>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round">

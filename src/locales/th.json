@@ -45,5 +45,38 @@
     "title": "ช่วยเหลือ",
     "subtitle": "เลือกหมวดหมู่",
     "hint": "วางเมาส์เพื่อดูรายละเอียด · คลิกเพื่อเลือก"
-  }
+  },
+  "category-card": {
+    "click-select": "คลิกเพื่อเลือก"
+  },
+  "category-modal": {
+    "selected-category": "หมวดหมู่ที่เลือก",
+    "create-document": "สร้างเอกสาร",
+    "cancel": "ยกเลิก"
+  },
+  "category-name": {
+  "name-project-revenue": "โครงการรายได้ (I/O)",
+  "name-lpg-5year": "LPG ตรวจสอบ 5 ปี/ประจำปี",
+  "name-calibration": "สอบเทียบเครื่องตรวจจับก๊าซ",
+  "name-project-expense": "ค่าใช้จ่ายโครงการ (I/O)",
+  "name-trading-cylinder": "ซื้อขายถังก๊าซและสินค้าอื่น",
+  "name-trading-bulk": "ซื้อขายก๊าซ Bulk",
+  "name-fix-asset-cylinder": "สินทรัพย์ถาวร ถังก๊าซ",
+  "name-expense": "ค่าใช้จ่าย",
+  "name-spare-parts": "อะไหล่และอุปกรณ์สำหรับก๊าซ",
+  "name-fix-asset": "สินทรัพย์ถาวร"
+},
+"codes": {
+  "desc-project-revenue": "โครงการวิศวกรรมและฝ่ายขาย",
+  "desc-service-charge": "ค่าบริการและค่าเช่า",
+  "desc-lpg-5year": "LPG ตรวจสอบ 5 ปี/ประจำปี",
+  "desc-calibration": "สอบเทียบเครื่องตรวจจับก๊าซ",
+  "desc-trading-gas-cylinder": "ถังก๊าซและสินค้าอื่นเพื่อการค้า",
+  "desc-trading-gas-bulk": "แก๊สเทกองเพื่อการค้า",
+  "desc-fixed-asset-gas": "ถังก๊าซสินทรัพย์ถาวร",
+  "desc-central-store": "คลังสินค้าส่วนกลาง",
+  "desc-expense-general": "ค่าใช้จ่ายทั่วไป",
+  "desc-fixed-asset-specified": "สินทรัพย์ถาวร - ระบุเลขบัญชี",
+  "desc-pm": "ค่าใช้จ่ายโครงการ (ซ่อมบำรุงเชิงป้องกัน รถยนต์/เครื่องจักร)"
+}
 }
