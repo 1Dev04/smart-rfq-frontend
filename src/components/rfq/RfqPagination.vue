@@ -43,7 +43,7 @@ function setSize(e) {
   emit("update:pageSize", Number(e.target.value));
   emit("update:page", 1);
 }
-</script>
+</script>x
 
 <template>
   <div class="pagination-bar">
@@ -75,7 +75,7 @@ function setSize(e) {
 .pagination-bar {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 8px;
-  padding: 12px 28px; background: var(--bg-surface, rgba(255,255,255,0.04)); border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+  padding: 12px 28px; border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
   flex-shrink: 0; font-family: "DM Sans", sans-serif;
 }
 .showing-text { font-size: 12.5px; color: var(--text-muted, rgba(255,255,255,0.35)); }

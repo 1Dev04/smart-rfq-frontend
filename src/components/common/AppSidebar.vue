@@ -18,7 +18,7 @@ const hovered = ref(false);
 
 const navItems = [
   {
-    to: "/doc-request-user",
+    to: "/doc-request",
     label: "Doc Request",
     icon: `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
            <polyline points="14 2 14 8 20 8"/>

@@ -1,35 +1,49 @@
-
 <script setup>
-import { ref, onMounted } from 'vue'
-import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
-import { RouterView } from 'vue-router'
+import { ref, onMounted} from "vue";
+import { DotLottieVue } from "@lottiefiles/dotlottie-vue";
+import { RouterView, useRoute } from "vue-router";
 import { useThemeStore } from "./stores/useThemeStore.js";
 useThemeStore();
-
-const loading = ref(true)
+const route = useRoute();
+const loading = ref(true);
 
 onMounted(() => {
+  if (route.path === "/auth/microsoft/callback") {
+    loading.value = false;
+    return;
+  }
   setTimeout(() => {
-    loading.value = false
-  }, 3000)
-})
-</script>
+    loading.value = false;
+  }, 3000); 
+});
+</script> 
 
 <template>
- 
   <div class="mobile-block">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <rect x="5" y="2" width="14" height="20" rx="2"/>
-      <line x1="12" y1="18" x2="12" y2="18.5" stroke-linecap="round" stroke-width="2"/>
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+    >
+      <rect x="5" y="2" width="14" height="20" rx="2" />
+      <line
+        x1="12"
+        y1="18"
+        x2="12"
+        y2="18.5"
+        stroke-linecap="round"
+        stroke-width="2"
+      />
     </svg>
     <p class="mb-title">Smart RFQ</p>
     <p class="mb-sub">รองรับเฉพาะ Desktop (1024px ขึ้นไป)</p>
     <p class="mb-hint">กรุณาเปิดบน คอมพิวเตอร์หรือ แล็ปท็อป</p>
   </div>
 
- 
   <div class="desktop-only">
-    
     <Transition name="fade">
       <div v-if="loading" class="loading-screen">
         <div class="loading-bg-glow" />
@@ -52,13 +66,14 @@ onMounted(() => {
             <div class="loading-bar-wrap">
               <div class="loading-bar" />
             </div>
-            <p class="loading-text">Intelligent Sourcing. Streamlined Quoting.</p>
+            <p class="loading-text">
+              Intelligent Sourcing. Streamlined Quoting.
+            </p>
           </div>
         </div>
       </div>
     </Transition>
 
-   
     <div v-if="!loading" class="app-ready">
       <RouterView />
     </div>
@@ -66,7 +81,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-
 .mobile-block {
   display: none;
   flex-direction: column;
@@ -96,20 +110,26 @@ onMounted(() => {
   margin: 0;
 }
 
-
 .desktop-only {
   display: none;
 }
 
 @media (max-width: 1023px) {
-  .mobile-block  { display: flex; }
-  .desktop-only  { display: none !important; }
+  .mobile-block {
+    display: flex;
+  }
+  .desktop-only {
+    display: none !important;
+  }
 }
 @media (min-width: 1024px) {
-  .mobile-block  { display: none; }
-  .desktop-only  { display: block; }
+  .mobile-block {
+    display: none;
+  }
+  .desktop-only {
+    display: block;
+  }
 }
-
 
 .loading-screen {
   position: fixed;
@@ -122,17 +142,12 @@ onMounted(() => {
   overflow: hidden;
 }
 
-
 .loading-bg-glow {
   position: absolute;
   width: 600px;
   height: 600px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    var(--rfq-navy-50) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, var(--rfq-navy-50) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -179,11 +194,7 @@ onMounted(() => {
 .loading-bar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(
-    90deg,
-    var(--rfq-navy-600),
-    var(--rfq-sky-400)
-  );
+  background: linear-gradient(90deg, var(--rfq-navy-600), var(--rfq-sky-400));
   border-radius: 99px;
   animation: loadProgress 2.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
@@ -196,9 +207,10 @@ onMounted(() => {
   margin: 0;
 }
 
-
 .fade-leave-active {
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
 }
 .fade-leave-to {
   opacity: 0;
@@ -206,17 +218,30 @@ onMounted(() => {
 }
 
 @keyframes loadProgress {
-  0%   { width: 0%; }
-  50%  { width: 65%; }
-  85%  { width: 90%; }
-  100% { width: 100%; }
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 65%;
+  }
+  85% {
+    width: 90%;
+  }
+  100% {
+    width: 100%;
+  }
 }
 
 @keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-
 
 @media (prefers-color-scheme: dark) {
   .loading-bg-glow {

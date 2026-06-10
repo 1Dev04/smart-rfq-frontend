@@ -1,12 +1,19 @@
 <script setup>
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useAuthStore } from '../../stores/auth.js'
+import { useThemeStore } from '../../stores/useThemeStore.js'
+
+const themeStore = useThemeStore()
 
 const props = defineProps({
   title: { type: String, default: "Dashboard" },
-  role:  { type: String, default: "User" },
-  email: { type: String, default: "user@itg.co.th" },
 });
+
+const auth = useAuthStore()
+
+const displayRole  = computed(() => auth.role  || 'User')
+const displayEmail = computed(() => auth.user?.email || 'user@itg.co.th')
 
 const { locale } = useI18n();
 const lang = computed({
@@ -24,10 +31,18 @@ const langs = [
 ];
 const showLangMenu = ref(false);
 const currentLang = computed(() => langs.find((l) => l.code === lang.value) || langs[1]);
-const avatarUrl = computed(
-  () =>
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(props.role)}&background=38a3f5&color=ffffff&rounded=true&size=48`
-);
+const avatarUrl = computed(() => {
+
+  const _theme = themeStore.themeId
+  const _dark  = themeStore.isDark
+
+  const accent = getComputedStyle(document.documentElement)
+    .getPropertyValue('--accent')
+    .trim()
+    .replace('#', '')
+
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayEmail.value)}&background=${accent}&color=ffffff&rounded=true&size=48`
+})
 </script>
 
 <template>
@@ -83,10 +98,10 @@ const avatarUrl = computed(
       </div>
 
       <div class="profile-chip">
-        <img :src="avatarUrl" :alt="role" class="profile-avatar" />
+        <img :src="avatarUrl" :alt="displayRole" class="profile-avatar" />
         <div class="profile-text">
-          <span class="profile-role">{{ role }}</span>
-          <span class="profile-email">{{ email }}</span>
+          <span class="profile-role">{{ displayRole }}</span>
+          <span class="profile-email">{{ displayEmail }}</span>
         </div>
       </div>
     </div>

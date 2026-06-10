@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth.js'
+import { loginWithMicrosoft } from '../../auth/AuthenWithMicrosoft.js'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -89,7 +90,7 @@ async function handleLogin() {
 
     await new Promise(r => setTimeout(r, 1400))
     auth.setAuth('mock-jwt-token', 'user', { email: cleanEmail + emailDomain })
-    router.push('/doc-request-user')
+    router.push('/doc-request')
 
   } catch { setError(currentLang.value.err_wrong) }
   finally { loading.value = false }
@@ -243,8 +244,9 @@ async function handleLogin() {
           <span class="div-line" />
         </div>
 
+      
         <!-- Microsoft SSO -->
-        <button class="ms-btn">
+        <button class="ms-btn" @click="loginWithMicrosoft"> 
           <svg width="17" height="17" viewBox="0 0 21 21" fill="none">
             <rect x="1"  y="1"  width="9" height="9" fill="#F25022"/>
             <rect x="11" y="1"  width="9" height="9" fill="#7FBA00"/>
