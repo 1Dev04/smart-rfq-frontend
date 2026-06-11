@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-
+import { useAuthStore } from '../../stores/auth'
+ล
 import AppLayout from "../../layouts/AppLayout.vue";
 import DatePicker from "primevue/datepicker";
 import Chart from "primevue/chart";
 import AuditLogTable from "../../components/audit/AuditLogTable.vue";
 import AuditLogPagination from "../../components/audit/AuditLogPagination.vue";
+
 
 /* ── Filters ── */
 const dateRange = ref(null);
@@ -34,7 +36,7 @@ function clearFilters() {
 const currentPage = ref(1);
 const pageSize = ref(10);
 const pagedLogs = computed(() => allLogs.value);
-
+const auth = useAuthStore()
 const allLogs = ref([]);
 const totalRecords = ref(0);
 const loading = ref(false);
