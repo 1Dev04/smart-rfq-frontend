@@ -54,12 +54,12 @@ const fetchLogs = async () => {
       const localISO = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}T00:00:00.000`;
       params.append("DateFrom", localISO);
     }
-   if (rangeEnd.value) {
-  const end = new Date(rangeEnd.value)
-  const pad = (n) => String(n).padStart(2, '0')
-  const localISO = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T00:00:00.000`
-  params.append('DateTo', localISO)
-}
+    if (rangeEnd.value) {
+      const end = new Date(rangeEnd.value);
+      const pad = (n) => String(n).padStart(2, "0");
+      const localISO = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T00:00:00.000`;
+      params.append("DateTo", localISO);
+    }
     if (filterEmail.value) params.append("E_User", filterEmail.value);
     if (filterPurchaser.value)
       params.append("E_Purchaser", filterPurchaser.value);
@@ -68,7 +68,9 @@ const fetchLogs = async () => {
     params.append("Page", currentPage.value);
     params.append("PageSize", pageSize.value);
 
-    const res = await fetch(`${BASE_URL}?${params}`);
+    const res = await fetch(`${BASE_URL}?${params}`, {
+  headers: { 'Authorization': `Bearer ${auth.authToken}` }
+});
     const json = await res.json();
     allLogs.value = json.data;
     totalRecords.value = json.total;
@@ -77,7 +79,9 @@ const fetchLogs = async () => {
     chartParams.set("Page", 1);
     chartParams.set("PageSize", 100);
 
-    const chartRes = await fetch(`${BASE_URL}?${chartParams}`);
+    const chartRes = await fetch(`${BASE_URL}?${chartParams}`, {
+  headers: { 'Authorization': `Bearer ${auth.authToken}` }
+});
     const chartJson = await chartRes.json();
     chartLogs.value = chartJson.data;
 
@@ -176,13 +180,12 @@ const buildChart = () => {
 watch(
   [dateRange, filterEmail, filterPurchaser, filterRfqNo, filterAction],
   () => {
-    
-    if (dateRange.value && dateRange.value[0] && !dateRange.value[1]) return
+    if (dateRange.value && dateRange.value[0] && !dateRange.value[1]) return;
 
-    currentPage.value = 1
-    fetchLogs()
-  }
-)
+    currentPage.value = 1;
+    fetchLogs();
+  },
+);
 watch(currentPage, fetchLogs);
 watch(pageSize, () => {
   currentPage.value = 1;
