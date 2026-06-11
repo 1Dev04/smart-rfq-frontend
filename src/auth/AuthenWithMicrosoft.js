@@ -1,8 +1,8 @@
 // auth/microsoft.js (หรือไฟล์ที่เก็บ loginWithMicrosoft)
 
-const TENANT_ID = '8c1832ea-a96d-413e-bf7d-9fe4d608e00b'
-const CLIENT_ID = 'b8a9eb72-7583-41f4-b3ce-30cd9bbb9f3e'
-const REDIRECT  = 'http://localhost:5173/auth/microsoft/callback'
+const TENANT_ID = import.meta.env.VITE_TENANT_ID
+const CLIENT_ID = import.meta.env.VITE_CLIENT_ID
+const REDIRECT = import.meta.env.VITE_REDIRECT_URI || import.meta.env.VITE_REDIRECT_LOCAL
 const SCOPES    = 'openid profile email User.Read'
 
 async function generatePKCE() {

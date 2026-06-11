@@ -46,40 +46,38 @@ onMounted(async () => {
   if (_called) return;
   _called = true;
 
-  // เริ่มต้น — คืบหน้าช้าๆ ไปถึง 30%
-  animProg(30, 1500);
+  animProg(55, 2000);
 
   if (urlError || !code) {
     status.value = "error";
     errorMsg.value = urlError || "ไม่พบ authorization code";
-    animProg(20, 400);
+    animProg(30, 400);
     return;
   }
 
-  // กำลัง fetch — คืบไปถึง 60%
-  setTimeout(() => animProg(60, 1000), 1500);
+  console.log("code:", code?.substring(0, 20));
+  console.log("codeVerifier:", codeVerifier);
+  console.log("codeVerifier length:", codeVerifier.length);
 
   try {
-    const res = await fetch("http://localhost:5137/microsoft/callback", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/microsoft/callback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // ส่ง codeVerifier ไปด้วย
       body: JSON.stringify({ code, codeVerifier }),
     });
-
-    // ได้ response — คืบไปถึง 85%
-    animProg(85, 600);
 
     if (res.status === 403) {
       status.value = "error";
       errorMsg.value = "ไม่มีสิทธิ์เข้าใช้งานระบบ";
-      animProg(85, 300);
+      animProg(30, 400);
       return;
     }
 
     if (!res.ok) {
       status.value = "error";
       errorMsg.value = "เชื่อมต่อ server ไม่สำเร็จ";
-      animProg(85, 300);
+      animProg(30, 400);
       return;
     }
 
@@ -89,10 +87,8 @@ onMounted(async () => {
       name: data.displayName,
     });
 
-    // สำเร็จ — วิ่งไปถึง 100% แล้วค่อย redirect
     status.value = "success";
-    animProg(100, 1200);
-
+    animProg(100, 2000);
     setTimeout(() => {
       router.push(
         data.role === "admin"
@@ -101,11 +97,11 @@ onMounted(async () => {
             ? "/purchaser"
             : "/doc-request-user",
       );
-    }, 2800);
+    }, 3500);
   } catch (e) {
     status.value = "error";
     errorMsg.value = "เชื่อมต่อ server ไม่สำเร็จ";
-    animProg(85, 300);
+    animProg(30, 400);
   }
 });
 

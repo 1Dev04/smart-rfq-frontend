@@ -72,13 +72,20 @@ router.beforeEach((to, _from, next) => {
   }
 
   if (to.meta.requiresGuest && token) {
-    return next({ name: role === "admin" ? "AdminDashboard" : "Doc Request" });
+    return next({
+      name: role === "admin" ? "AdminDashboard" : "Doc Request",
+    });
   }
 
   if (to.meta.requiresAuth && to.meta.role) {
     if (role !== to.meta.role && role !== "admin") {
       return next({
-        name: role === "admin" ? "AdminDashboard" : "Doc Request",
+        name:
+          role === "admin"
+            ? "AdminDashboard"
+            : role === "purchaser"
+              ? "Doc Request"
+              : "Doc Request",
       });
     }
   }
