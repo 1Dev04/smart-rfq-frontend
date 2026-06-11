@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useAuthStore } from '../../stores/auth'
-ล
 import AppLayout from "../../layouts/AppLayout.vue";
 import DatePicker from "primevue/datepicker";
 import Chart from "primevue/chart";
