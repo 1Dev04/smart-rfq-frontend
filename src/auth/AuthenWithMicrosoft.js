@@ -1,4 +1,3 @@
-// auth/microsoft.js (หรือไฟล์ที่เก็บ loginWithMicrosoft)
 
 const TENANT_ID = import.meta.env.VITE_TENANT_ID
 const CLIENT_ID = import.meta.env.VITE_CLIENT_ID
@@ -23,7 +22,7 @@ async function generatePKCE() {
 
 export async function loginWithMicrosoft() {
   const { verifier, challenge } = await generatePKCE()
-  sessionStorage.setItem('pkce_verifier', verifier)  // เก็บไว้ใช้ตอน callback
+  sessionStorage.setItem('pkce_verifier', verifier) 
 
   const params = new URLSearchParams({
     client_id:             CLIENT_ID,

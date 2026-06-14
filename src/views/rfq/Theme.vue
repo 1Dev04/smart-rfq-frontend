@@ -3,7 +3,7 @@ import AppLayout       from "../../layouts/AppLayout.vue";
 import { useThemeStore, themes } from "../../stores/useThemeStore.js";
 import { supportedLocales, setLocale } from "../../i18n";
 import { useI18n } from "vue-i18n";
-import { computed } from "vue"
+import { computed } from "vue";
 
 const theme = useThemeStore();
 

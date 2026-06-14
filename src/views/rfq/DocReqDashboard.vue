@@ -1,16 +1,18 @@
 <script setup>
-import { ref, computed, watch } from "vue";
-import { useRFQDrawerStore } from '../../stores/rfqDrawer'
-import AppLayout      from "../../layouts/AppLayout.vue";
-import RfqFilterBar   from "../../components/rfq/RfqFilterBar.vue";
-import RfqTable       from "../../components/rfq/RfqTable.vue";
-import RfqPagination  from "../../components/rfq/RfqPagination.vue";
-import CreateDocument from './CreateDocument.vue'
-
-const drawer = useRFQDrawerStore()
+import { ref, computed, watch, onMounted } from "vue";
+import { useToast } from "primevue/usetoast";          // ← เพิ่ม
+import { useRFQDrawerStore } from '../../stores/rfqDrawer';
+import AppLayout     from "../../layouts/AppLayout.vue";
+import RfqFilterBar  from "../../components/rfq/RfqFilterBar.vue";
+import RfqTable      from "../../components/rfq/RfqTable.vue";
+import RfqPagination from "../../components/rfq/RfqPagination.vue";
+import CreateDocument from './CreateDocument.vue';
 import { useI18n } from "vue-i18n";
 
+const drawer = useRFQDrawerStore();
+const toast  = useToast();                             // ← เพิ่ม
 const { t, locale } = useI18n();
+
 const lang = computed({
   get: () => locale.value,
   set: (value) => {
@@ -20,143 +22,57 @@ const lang = computed({
   },
 });
 
-const allRows = ref([
-  { id:1,  rfqNo:"RFQ-yymmxxx", type:"Project Revenue (I/O)",          list:"AAAAAAAAAAAA",    qty:1,  uom:"(ea, pc)",    status:"Accept", requester:"user.a@itg.co.th", purchaser:"PurchaseA@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:1  },
-  { id:2,  rfqNo:"RFQ-yymmxxx", type:"LPG 5Years&Yearly Insp",         list:"BBBBBBBBBB",     qty:3,  uom:"(set)",        status:"Waiting", requester:"user.b@itg.co.th", purchaser:"PurchaseB@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:2  },
-  { id:3,  rfqNo:"RFQ-yymmxxx", type:"Calibration Gas Detector",       list:"CCCCCCCCCCCCCCC", qty:2,  uom:"(kg, ton)",    status:"Resent",  requester:"user.c@itg.co.th", purchaser:"PurchaseC@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:5  },
-  { id:4,  rfqNo:"RFQ-yymmxxx", type:"Project Expense (I/O)",          list:"DDDDDDD",        qty:2,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.d@itg.co.th", purchaser:"PurchaseD@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:5,  rfqNo:"RFQ-yymmxxx", type:"Gas",                            list:"FFFFFFFFFFF",    qty:5,  uom:"(liter, m3)",  status:"Accept", requester:"user.e@itg.co.th", purchaser:"PurchaseE@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:9  },
-  { id:6,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Cylinder",         list:"HHHHHHHHHHHHHH",  qty:8,  uom:"(liter, m3)",  status:"Waiting", requester:"user.f@itg.co.th", purchaser:"PurchaseF@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:10 },
-  { id:7,  rfqNo:"RFQ-yymmxxx", type:"Expense",                        list:"IIIIIIIIIIIIIIII", qty:10, uom:"(liter, m3)",  status:"Resent",  requester:"user.g@itg.co.th", purchaser:"PurchaseG@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:6  },
-  { id:8,  rfqNo:"RFQ-yymmxxx", type:"Spare parts & Equipment For Gas",list:"JJJJJJ",          qty:6,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.h@itg.co.th", purchaser:"PurchaseH@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:9,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset",                      list:"KKKKKKKKKKKKK",   qty:8,  uom:"(ea, pc)",     status:"Accept", requester:"user.i@itg.co.th", purchaser:"PurchaseI@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:11 },
-  { id:10, rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Nitogen",          list:"LLLLLLLLLLL",     qty:9,  uom:"(set)",        status:"Accept", requester:"user.j@itg.co.th", purchaser:"PurchaseJ@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:20 },
-  { id:11, rfqNo:"RFQ-yymmxxx", type:"Instrument & Tools",             list:"MMMMMMMMMM",      qty:4,  uom:"(ea, pc)",     status:"Accept", requester:"user.k@itg.co.th", purchaser:"PurchaseK@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:3  },
-  { id:12, rfqNo:"RFQ-yymmxxx", type:"Chemical",                       list:"NNNNNNNNNN",      qty:7,  uom:"(liter, m3)",  status:"Waiting", requester:"user.l@itg.co.th", purchaser:"PurchaseL@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:14 },
-  { id:13,  rfqNo:"RFQ-yymmxxx", type:"Project Revenue (I/O)",          list:"AAAAAAAAAAAA",    qty:1,  uom:"(ea, pc)",    status:"Accept", requester:"user.a@itg.co.th", purchaser:"PurchaseA@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:1  },
-  { id:14,  rfqNo:"RFQ-yymmxxx", type:"LPG 5Years&Yearly Insp",         list:"BBBBBBBBBB",     qty:3,  uom:"(set)",        status:"Waiting", requester:"user.b@itg.co.th", purchaser:"PurchaseB@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:2  },
-  { id:15,  rfqNo:"RFQ-yymmxxx", type:"Calibration Gas Detector",       list:"CCCCCCCCCCCCCCC", qty:2,  uom:"(kg, ton)",    status:"Resent",  requester:"user.c@itg.co.th", purchaser:"PurchaseC@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:5  },
-  { id:16,  rfqNo:"RFQ-yymmxxx", type:"Project Expense (I/O)",          list:"DDDDDDD",        qty:2,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.d@itg.co.th", purchaser:"PurchaseD@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:17,  rfqNo:"RFQ-yymmxxx", type:"Gas",                            list:"FFFFFFFFFFF",    qty:5,  uom:"(liter, m3)",  status:"Accept", requester:"user.e@itg.co.th", purchaser:"PurchaseE@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:9  },
-  { id:18,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Cylinder",         list:"HHHHHHHHHHHHHH",  qty:8,  uom:"(liter, m3)",  status:"Waiting", requester:"user.f@itg.co.th", purchaser:"PurchaseF@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:10 },
-  { id:19,  rfqNo:"RFQ-yymmxxx", type:"Expense",                        list:"IIIIIIIIIIIIIIII", qty:10, uom:"(liter, m3)",  status:"Resent",  requester:"user.g@itg.co.th", purchaser:"PurchaseG@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:6  },
-  { id:20,  rfqNo:"RFQ-yymmxxx", type:"Spare parts & Equipment For Gas",list:"JJJJJJ",          qty:6,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.h@itg.co.th", purchaser:"PurchaseH@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:21,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset",                      list:"KKKKKKKKKKKKK",   qty:8,  uom:"(ea, pc)",     status:"Accept", requester:"user.i@itg.co.th", purchaser:"PurchaseI@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:11 },
-  { id:22, rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Nitogen",          list:"LLLLLLLLLLL",     qty:9,  uom:"(set)",        status:"Accept", requester:"user.j@itg.co.th", purchaser:"PurchaseJ@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:20 },
-  { id:23, rfqNo:"RFQ-yymmxxx", type:"Instrument & Tools",             list:"MMMMMMMMMM",      qty:4,  uom:"(ea, pc)",     status:"Accept", requester:"user.k@itg.co.th", purchaser:"PurchaseK@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:3  },
-  { id:24, rfqNo:"RFQ-yymmxxx", type:"Chemical",                       list:"NNNNNNNNNN",      qty:7,  uom:"(liter, m3)",  status:"Waiting", requester:"user.l@itg.co.th", purchaser:"PurchaseL@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:14 },
-  { id:1,  rfqNo:"RFQ-yymmxxx", type:"Project Revenue (I/O)",          list:"AAAAAAAAAAAA",    qty:1,  uom:"(ea, pc)",    status:"Accept", requester:"user.a@itg.co.th", purchaser:"PurchaseA@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:1  },
-  { id:2,  rfqNo:"RFQ-yymmxxx", type:"LPG 5Years&Yearly Insp",         list:"BBBBBBBBBB",     qty:3,  uom:"(set)",        status:"Waiting", requester:"user.b@itg.co.th", purchaser:"PurchaseB@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:2  },
-  { id:3,  rfqNo:"RFQ-yymmxxx", type:"Calibration Gas Detector",       list:"CCCCCCCCCCCCCCC", qty:2,  uom:"(kg, ton)",    status:"Resent",  requester:"user.c@itg.co.th", purchaser:"PurchaseC@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:5  },
-  { id:4,  rfqNo:"RFQ-yymmxxx", type:"Project Expense (I/O)",          list:"DDDDDDD",        qty:2,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.d@itg.co.th", purchaser:"PurchaseD@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:5,  rfqNo:"RFQ-yymmxxx", type:"Gas",                            list:"FFFFFFFFFFF",    qty:5,  uom:"(liter, m3)",  status:"Accept", requester:"user.e@itg.co.th", purchaser:"PurchaseE@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:9  },
-  { id:6,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Cylinder",         list:"HHHHHHHHHHHHHH",  qty:8,  uom:"(liter, m3)",  status:"Waiting", requester:"user.f@itg.co.th", purchaser:"PurchaseF@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:10 },
-  { id:7,  rfqNo:"RFQ-yymmxxx", type:"Expense",                        list:"IIIIIIIIIIIIIIII", qty:10, uom:"(liter, m3)",  status:"Resent",  requester:"user.g@itg.co.th", purchaser:"PurchaseG@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:6  },
-  { id:8,  rfqNo:"RFQ-yymmxxx", type:"Spare parts & Equipment For Gas",list:"JJJJJJ",          qty:6,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.h@itg.co.th", purchaser:"PurchaseH@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:9,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset",                      list:"KKKKKKKKKKKKK",   qty:8,  uom:"(ea, pc)",     status:"Accept", requester:"user.i@itg.co.th", purchaser:"PurchaseI@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:11 },
-  { id:10, rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Nitogen",          list:"LLLLLLLLLLL",     qty:9,  uom:"(set)",        status:"Accept", requester:"user.j@itg.co.th", purchaser:"PurchaseJ@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:20 },
-  { id:11, rfqNo:"RFQ-yymmxxx", type:"Instrument & Tools",             list:"MMMMMMMMMM",      qty:4,  uom:"(ea, pc)",     status:"Accept", requester:"user.k@itg.co.th", purchaser:"PurchaseK@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:3  },
-  { id:12, rfqNo:"RFQ-yymmxxx", type:"Chemical",                       list:"NNNNNNNNNN",      qty:7,  uom:"(liter, m3)",  status:"Waiting", requester:"user.l@itg.co.th", purchaser:"PurchaseL@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:14 },
-  { id:13,  rfqNo:"RFQ-yymmxxx", type:"Project Revenue (I/O)",          list:"AAAAAAAAAAAA",    qty:1,  uom:"(ea, pc)",    status:"Accept", requester:"user.a@itg.co.th", purchaser:"PurchaseA@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:1  },
-  { id:14,  rfqNo:"RFQ-yymmxxx", type:"LPG 5Years&Yearly Insp",         list:"BBBBBBBBBB",     qty:3,  uom:"(set)",        status:"Waiting", requester:"user.b@itg.co.th", purchaser:"PurchaseB@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:2  },
-  { id:15,  rfqNo:"RFQ-yymmxxx", type:"Calibration Gas Detector",       list:"CCCCCCCCCCCCCCC", qty:2,  uom:"(kg, ton)",    status:"Resent",  requester:"user.c@itg.co.th", purchaser:"PurchaseC@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:5  },
-  { id:16,  rfqNo:"RFQ-yymmxxx", type:"Project Expense (I/O)",          list:"DDDDDDD",        qty:2,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.d@itg.co.th", purchaser:"PurchaseD@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:17,  rfqNo:"RFQ-yymmxxx", type:"Gas",                            list:"FFFFFFFFFFF",    qty:5,  uom:"(liter, m3)",  status:"Accept", requester:"user.e@itg.co.th", purchaser:"PurchaseE@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:9  },
-  { id:18,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Cylinder",         list:"HHHHHHHHHHHHHH",  qty:8,  uom:"(liter, m3)",  status:"Waiting", requester:"user.f@itg.co.th", purchaser:"PurchaseF@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:10 },
-  { id:19,  rfqNo:"RFQ-yymmxxx", type:"Expense",                        list:"IIIIIIIIIIIIIIII", qty:10, uom:"(liter, m3)",  status:"Resent",  requester:"user.g@itg.co.th", purchaser:"PurchaseG@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:6  },
-  { id:20,  rfqNo:"RFQ-yymmxxx", type:"Spare parts & Equipment For Gas",list:"JJJJJJ",          qty:6,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.h@itg.co.th", purchaser:"PurchaseH@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:21,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset",                      list:"KKKKKKKKKKKKK",   qty:8,  uom:"(ea, pc)",     status:"Accept", requester:"user.i@itg.co.th", purchaser:"PurchaseI@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:11 },
-  { id:22, rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Nitogen",          list:"LLLLLLLLLLL",     qty:9,  uom:"(set)",        status:"Accept", requester:"user.j@itg.co.th", purchaser:"PurchaseJ@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:20 },
-  { id:23, rfqNo:"RFQ-yymmxxx", type:"Instrument & Tools",             list:"MMMMMMMMMM",      qty:4,  uom:"(ea, pc)",     status:"Accept", requester:"user.k@itg.co.th", purchaser:"PurchaseK@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:3  },
-  { id:24, rfqNo:"RFQ-yymmxxx", type:"Chemical",                       list:"NNNNNNNNNN",      qty:7,  uom:"(liter, m3)",  status:"Waiting", requester:"user.l@itg.co.th", purchaser:"PurchaseL@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:14 },
-  { id:1,  rfqNo:"RFQ-yymmxxx", type:"Project Revenue (I/O)",          list:"AAAAAAAAAAAA",    qty:1,  uom:"(ea, pc)",    status:"Accept", requester:"user.a@itg.co.th", purchaser:"PurchaseA@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:1  },
-  { id:2,  rfqNo:"RFQ-yymmxxx", type:"LPG 5Years&Yearly Insp",         list:"BBBBBBBBBB",     qty:3,  uom:"(set)",        status:"Waiting", requester:"user.b@itg.co.th", purchaser:"PurchaseB@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:2  },
-  { id:3,  rfqNo:"RFQ-yymmxxx", type:"Calibration Gas Detector",       list:"CCCCCCCCCCCCCCC", qty:2,  uom:"(kg, ton)",    status:"Resent",  requester:"user.c@itg.co.th", purchaser:"PurchaseC@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:5  },
-  { id:4,  rfqNo:"RFQ-yymmxxx", type:"Project Expense (I/O)",          list:"DDDDDDD",        qty:2,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.d@itg.co.th", purchaser:"PurchaseD@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:5,  rfqNo:"RFQ-yymmxxx", type:"Gas",                            list:"FFFFFFFFFFF",    qty:5,  uom:"(liter, m3)",  status:"Accept", requester:"user.e@itg.co.th", purchaser:"PurchaseE@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:9  },
-  { id:6,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Cylinder",         list:"HHHHHHHHHHHHHH",  qty:8,  uom:"(liter, m3)",  status:"Waiting", requester:"user.f@itg.co.th", purchaser:"PurchaseF@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:10 },
-  { id:7,  rfqNo:"RFQ-yymmxxx", type:"Expense",                        list:"IIIIIIIIIIIIIIII", qty:10, uom:"(liter, m3)",  status:"Resent",  requester:"user.g@itg.co.th", purchaser:"PurchaseG@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:6  },
-  { id:8,  rfqNo:"RFQ-yymmxxx", type:"Spare parts & Equipment For Gas",list:"JJJJJJ",          qty:6,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.h@itg.co.th", purchaser:"PurchaseH@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:9,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset",                      list:"KKKKKKKKKKKKK",   qty:8,  uom:"(ea, pc)",     status:"Accept", requester:"user.i@itg.co.th", purchaser:"PurchaseI@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:11 },
-  { id:10, rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Nitogen",          list:"LLLLLLLLLLL",     qty:9,  uom:"(set)",        status:"Accept", requester:"user.j@itg.co.th", purchaser:"PurchaseJ@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:20 },
-  { id:11, rfqNo:"RFQ-yymmxxx", type:"Instrument & Tools",             list:"MMMMMMMMMM",      qty:4,  uom:"(ea, pc)",     status:"Accept", requester:"user.k@itg.co.th", purchaser:"PurchaseK@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:3  },
-  { id:12, rfqNo:"RFQ-yymmxxx", type:"Chemical",                       list:"NNNNNNNNNN",      qty:7,  uom:"(liter, m3)",  status:"Waiting", requester:"user.l@itg.co.th", purchaser:"PurchaseL@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:14 },
-  { id:13,  rfqNo:"RFQ-yymmxxx", type:"Project Revenue (I/O)",          list:"AAAAAAAAAAAA",    qty:1,  uom:"(ea, pc)",    status:"Accept", requester:"user.a@itg.co.th", purchaser:"PurchaseA@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:1  },
-  { id:14,  rfqNo:"RFQ-yymmxxx", type:"LPG 5Years&Yearly Insp",         list:"BBBBBBBBBB",     qty:3,  uom:"(set)",        status:"Waiting", requester:"user.b@itg.co.th", purchaser:"PurchaseB@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:2  },
-  { id:15,  rfqNo:"RFQ-yymmxxx", type:"Calibration Gas Detector",       list:"CCCCCCCCCCCCCCC", qty:2,  uom:"(kg, ton)",    status:"Resent",  requester:"user.c@itg.co.th", purchaser:"PurchaseC@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:5  },
-  { id:16,  rfqNo:"RFQ-yymmxxx", type:"Project Expense (I/O)",          list:"DDDDDDD",        qty:2,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.d@itg.co.th", purchaser:"PurchaseD@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:17,  rfqNo:"RFQ-yymmxxx", type:"Gas",                            list:"FFFFFFFFFFF",    qty:5,  uom:"(liter, m3)",  status:"Accept", requester:"user.e@itg.co.th", purchaser:"PurchaseE@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:9  },
-  { id:18,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Cylinder",         list:"HHHHHHHHHHHHHH",  qty:8,  uom:"(liter, m3)",  status:"Waiting", requester:"user.f@itg.co.th", purchaser:"PurchaseF@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:10 },
-  { id:19,  rfqNo:"RFQ-yymmxxx", type:"Expense",                        list:"IIIIIIIIIIIIIIII", qty:10, uom:"(liter, m3)",  status:"Resent",  requester:"user.g@itg.co.th", purchaser:"PurchaseG@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:6  },
-  { id:20,  rfqNo:"RFQ-yymmxxx", type:"Spare parts & Equipment For Gas",list:"JJJJJJ",          qty:6,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.h@itg.co.th", purchaser:"PurchaseH@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:21,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset",                      list:"KKKKKKKKKKKKK",   qty:8,  uom:"(ea, pc)",     status:"Accept", requester:"user.i@itg.co.th", purchaser:"PurchaseI@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:11 },
-  { id:22, rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Nitogen",          list:"LLLLLLLLLLL",     qty:9,  uom:"(set)",        status:"Accept", requester:"user.j@itg.co.th", purchaser:"PurchaseJ@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:20 },
-  { id:23, rfqNo:"RFQ-yymmxxx", type:"Instrument & Tools",             list:"MMMMMMMMMM",      qty:4,  uom:"(ea, pc)",     status:"Accept", requester:"user.k@itg.co.th", purchaser:"PurchaseK@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:3  },
-  { id:24, rfqNo:"RFQ-yymmxxx", type:"Chemical",                       list:"NNNNNNNNNN",      qty:7,  uom:"(liter, m3)",  status:"Waiting", requester:"user.l@itg.co.th", purchaser:"PurchaseL@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:14 },
-  { id:1,  rfqNo:"RFQ-yymmxxx", type:"Project Revenue (I/O)",          list:"AAAAAAAAAAAA",    qty:1,  uom:"(ea, pc)",    status:"Accept", requester:"user.a@itg.co.th", purchaser:"PurchaseA@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:1  },
-  { id:2,  rfqNo:"RFQ-yymmxxx", type:"LPG 5Years&Yearly Insp",         list:"BBBBBBBBBB",     qty:3,  uom:"(set)",        status:"Waiting", requester:"user.b@itg.co.th", purchaser:"PurchaseB@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:2  },
-  { id:3,  rfqNo:"RFQ-yymmxxx", type:"Calibration Gas Detector",       list:"CCCCCCCCCCCCCCC", qty:2,  uom:"(kg, ton)",    status:"Resent",  requester:"user.c@itg.co.th", purchaser:"PurchaseC@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:5  },
-  { id:4,  rfqNo:"RFQ-yymmxxx", type:"Project Expense (I/O)",          list:"DDDDDDD",        qty:2,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.d@itg.co.th", purchaser:"PurchaseD@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:5,  rfqNo:"RFQ-yymmxxx", type:"Gas",                            list:"FFFFFFFFFFF",    qty:5,  uom:"(liter, m3)",  status:"Accept", requester:"user.e@itg.co.th", purchaser:"PurchaseE@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:9  },
-  { id:6,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Cylinder",         list:"HHHHHHHHHHHHHH",  qty:8,  uom:"(liter, m3)",  status:"Waiting", requester:"user.f@itg.co.th", purchaser:"PurchaseF@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:10 },
-  { id:7,  rfqNo:"RFQ-yymmxxx", type:"Expense",                        list:"IIIIIIIIIIIIIIII", qty:10, uom:"(liter, m3)",  status:"Resent",  requester:"user.g@itg.co.th", purchaser:"PurchaseG@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:6  },
-  { id:8,  rfqNo:"RFQ-yymmxxx", type:"Spare parts & Equipment For Gas",list:"JJJJJJ",          qty:6,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.h@itg.co.th", purchaser:"PurchaseH@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:9,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset",                      list:"KKKKKKKKKKKKK",   qty:8,  uom:"(ea, pc)",     status:"Accept", requester:"user.i@itg.co.th", purchaser:"PurchaseI@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:11 },
-  { id:10, rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Nitogen",          list:"LLLLLLLLLLL",     qty:9,  uom:"(set)",        status:"Accept", requester:"user.j@itg.co.th", purchaser:"PurchaseJ@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:20 },
-  { id:11, rfqNo:"RFQ-yymmxxx", type:"Instrument & Tools",             list:"MMMMMMMMMM",      qty:4,  uom:"(ea, pc)",     status:"Accept", requester:"user.k@itg.co.th", purchaser:"PurchaseK@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:3  },
-  { id:12, rfqNo:"RFQ-yymmxxx", type:"Chemical",                       list:"NNNNNNNNNN",      qty:7,  uom:"(liter, m3)",  status:"Waiting", requester:"user.l@itg.co.th", purchaser:"PurchaseL@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:14 },
-  { id:13,  rfqNo:"RFQ-yymmxxx", type:"Project Revenue (I/O)",          list:"AAAAAAAAAAAA",    qty:1,  uom:"(ea, pc)",    status:"Accept", requester:"user.a@itg.co.th", purchaser:"PurchaseA@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:1  },
-  { id:14,  rfqNo:"RFQ-yymmxxx", type:"LPG 5Years&Yearly Insp",         list:"BBBBBBBBBB",     qty:3,  uom:"(set)",        status:"Waiting", requester:"user.b@itg.co.th", purchaser:"PurchaseB@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:2  },
-  { id:15,  rfqNo:"RFQ-yymmxxx", type:"Calibration Gas Detector",       list:"CCCCCCCCCCCCCCC", qty:2,  uom:"(kg, ton)",    status:"Resent",  requester:"user.c@itg.co.th", purchaser:"PurchaseC@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:5  },
-  { id:16,  rfqNo:"RFQ-yymmxxx", type:"Project Expense (I/O)",          list:"DDDDDDD",        qty:2,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.d@itg.co.th", purchaser:"PurchaseD@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:17,  rfqNo:"RFQ-yymmxxx", type:"Gas",                            list:"FFFFFFFFFFF",    qty:5,  uom:"(liter, m3)",  status:"Accept", requester:"user.e@itg.co.th", purchaser:"PurchaseE@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:9  },
-  { id:18,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Cylinder",         list:"HHHHHHHHHHHHHH",  qty:8,  uom:"(liter, m3)",  status:"Waiting", requester:"user.f@itg.co.th", purchaser:"PurchaseF@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:10 },
-  { id:19,  rfqNo:"RFQ-yymmxxx", type:"Expense",                        list:"IIIIIIIIIIIIIIII", qty:10, uom:"(liter, m3)",  status:"Resent",  requester:"user.g@itg.co.th", purchaser:"PurchaseG@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:6  },
-  { id:20,  rfqNo:"RFQ-yymmxxx", type:"Spare parts & Equipment For Gas",list:"JJJJJJ",          qty:6,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.h@itg.co.th", purchaser:"PurchaseH@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:21,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset",                      list:"KKKKKKKKKKKKK",   qty:8,  uom:"(ea, pc)",     status:"Accept", requester:"user.i@itg.co.th", purchaser:"PurchaseI@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:11 },
-  { id:22, rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Nitogen",          list:"LLLLLLLLLLL",     qty:9,  uom:"(set)",        status:"Accept", requester:"user.j@itg.co.th", purchaser:"PurchaseJ@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:20 },
-  { id:23, rfqNo:"RFQ-yymmxxx", type:"Instrument & Tools",             list:"MMMMMMMMMM",      qty:4,  uom:"(ea, pc)",     status:"Accept", requester:"user.k@itg.co.th", purchaser:"PurchaseK@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:3  },
-  { id:24, rfqNo:"RFQ-yymmxxx", type:"Chemical",                       list:"NNNNNNNNNN",      qty:7,  uom:"(liter, m3)",  status:"Waiting", requester:"user.l@itg.co.th", purchaser:"PurchaseL@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:14 },
-  { id:1,  rfqNo:"RFQ-yymmxxx", type:"Project Revenue (I/O)",          list:"AAAAAAAAAAAA",    qty:1,  uom:"(ea, pc)",    status:"Accept", requester:"user.a@itg.co.th", purchaser:"PurchaseA@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:1  },
-  { id:2,  rfqNo:"RFQ-yymmxxx", type:"LPG 5Years&Yearly Insp",         list:"BBBBBBBBBB",     qty:3,  uom:"(set)",        status:"Waiting", requester:"user.b@itg.co.th", purchaser:"PurchaseB@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:2  },
-  { id:3,  rfqNo:"RFQ-yymmxxx", type:"Calibration Gas Detector",       list:"CCCCCCCCCCCCCCC", qty:2,  uom:"(kg, ton)",    status:"Resent",  requester:"user.c@itg.co.th", purchaser:"PurchaseC@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:5  },
-  { id:4,  rfqNo:"RFQ-yymmxxx", type:"Project Expense (I/O)",          list:"DDDDDDD",        qty:2,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.d@itg.co.th", purchaser:"PurchaseD@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:5,  rfqNo:"RFQ-yymmxxx", type:"Gas",                            list:"FFFFFFFFFFF",    qty:5,  uom:"(liter, m3)",  status:"Accept", requester:"user.e@itg.co.th", purchaser:"PurchaseE@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:9  },
-  { id:6,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Cylinder",         list:"HHHHHHHHHHHHHH",  qty:8,  uom:"(liter, m3)",  status:"Waiting", requester:"user.f@itg.co.th", purchaser:"PurchaseF@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:10 },
-  { id:7,  rfqNo:"RFQ-yymmxxx", type:"Expense",                        list:"IIIIIIIIIIIIIIII", qty:10, uom:"(liter, m3)",  status:"Resent",  requester:"user.g@itg.co.th", purchaser:"PurchaseG@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:6  },
-  { id:8,  rfqNo:"RFQ-yymmxxx", type:"Spare parts & Equipment For Gas",list:"JJJJJJ",          qty:6,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.h@itg.co.th", purchaser:"PurchaseH@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:9,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset",                      list:"KKKKKKKKKKKKK",   qty:8,  uom:"(ea, pc)",     status:"Accept", requester:"user.i@itg.co.th", purchaser:"PurchaseI@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:11 },
-  { id:10, rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Nitogen",          list:"LLLLLLLLLLL",     qty:9,  uom:"(set)",        status:"Accept", requester:"user.j@itg.co.th", purchaser:"PurchaseJ@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:20 },
-  { id:11, rfqNo:"RFQ-yymmxxx", type:"Instrument & Tools",             list:"MMMMMMMMMM",      qty:4,  uom:"(ea, pc)",     status:"Accept", requester:"user.k@itg.co.th", purchaser:"PurchaseK@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:3  },
-  { id:12, rfqNo:"RFQ-yymmxxx", type:"Chemical",                       list:"NNNNNNNNNN",      qty:7,  uom:"(liter, m3)",  status:"Waiting", requester:"user.l@itg.co.th", purchaser:"PurchaseL@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:14 },
-  { id:13,  rfqNo:"RFQ-yymmxxx", type:"Project Revenue (I/O)",          list:"AAAAAAAAAAAA",    qty:1,  uom:"(ea, pc)",    status:"Accept", requester:"user.a@itg.co.th", purchaser:"PurchaseA@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:1  },
-  { id:14,  rfqNo:"RFQ-yymmxxx", type:"LPG 5Years&Yearly Insp",         list:"BBBBBBBBBB",     qty:3,  uom:"(set)",        status:"Waiting", requester:"user.b@itg.co.th", purchaser:"PurchaseB@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:2  },
-  { id:15,  rfqNo:"RFQ-yymmxxx", type:"Calibration Gas Detector",       list:"CCCCCCCCCCCCCCC", qty:2,  uom:"(kg, ton)",    status:"Resent",  requester:"user.c@itg.co.th", purchaser:"PurchaseC@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:5  },
-  { id:16,  rfqNo:"RFQ-yymmxxx", type:"Project Expense (I/O)",          list:"DDDDDDD",        qty:2,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.d@itg.co.th", purchaser:"PurchaseD@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:17,  rfqNo:"RFQ-yymmxxx", type:"Gas",                            list:"FFFFFFFFFFF",    qty:5,  uom:"(liter, m3)",  status:"Accept", requester:"user.e@itg.co.th", purchaser:"PurchaseE@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:9  },
-  { id:18,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Cylinder",         list:"HHHHHHHHHHHHHH",  qty:8,  uom:"(liter, m3)",  status:"Waiting", requester:"user.f@itg.co.th", purchaser:"PurchaseF@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:10 },
-  { id:19,  rfqNo:"RFQ-yymmxxx", type:"Expense",                        list:"IIIIIIIIIIIIIIII", qty:10, uom:"(liter, m3)",  status:"Resent",  requester:"user.g@itg.co.th", purchaser:"PurchaseG@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:6  },
-  { id:20,  rfqNo:"RFQ-yymmxxx", type:"Spare parts & Equipment For Gas",list:"JJJJJJ",          qty:6,  uom:"(liter, m3)",  status:"Cancel",  requester:"user.h@itg.co.th", purchaser:"PurchaseH@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:8  },
-  { id:21,  rfqNo:"RFQ-yymmxxx", type:"Fix Asset",                      list:"KKKKKKKKKKKKK",   qty:8,  uom:"(ea, pc)",     status:"Accept", requester:"user.i@itg.co.th", purchaser:"PurchaseI@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:11 },
-  { id:22, rfqNo:"RFQ-yymmxxx", type:"Fix Asset Gas Nitogen",          list:"LLLLLLLLLLL",     qty:9,  uom:"(set)",        status:"Accept", requester:"user.j@itg.co.th", purchaser:"PurchaseJ@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:20 },
-  { id:23, rfqNo:"RFQ-yymmxxx", type:"Instrument & Tools",             list:"MMMMMMMMMM",      qty:4,  uom:"(ea, pc)",     status:"Accept", requester:"user.k@itg.co.th", purchaser:"PurchaseK@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:3  },
-  { id:24, rfqNo:"RFQ-yymmxxx", type:"Chemical",                       list:"NNNNNNNNNN",      qty:7,  uom:"(liter, m3)",  status:"Waiting", requester:"user.l@itg.co.th", purchaser:"PurchaseL@itg.co.th", created:"dd/mm/yy\ndatetime", updated:"dd/mm/yy\ndatetime", lt:14 },
-  
-]);
+// ── State ──────────────────────────────────────────────
+const allRows   = ref([]);
+const isLoading = ref(false);
+const error     = ref(null);
 
+// ── Fetch ──────────────────────────────────────────────
+async function fetchDocRequest() {
+  isLoading.value = true;
+  error.value     = null;
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/api/doc-request`,
+      { headers: { "Accept": "application/json" } }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    allRows.value = Array.isArray(data) ? data : (data.data ?? []);
 
+    // ✅ โหลดสำเร็จ
+    toast.add({
+      severity: "success",
+      summary:  "โหลดข้อมูลสำเร็จ",
+      detail:   `พบ ${allRows.value.length} รายการ`,
+      life:     3000,
+    });
+
+  } catch (err) {
+    error.value = err.message;
+
+    // ❌ โหลดไม่สำเร็จ
+    toast.add({
+      severity: "error",
+      summary:  "โหลดข้อมูลไม่สำเร็จ",
+      detail:   err.message,
+      closable: true,
+      life:     3000,
+    });
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+onMounted(fetchDocRequest);
+
+// ── Filters ────────────────────────────────────────────
 const filters = ref({
-  rfqNo: "",
-  type: "",
-  list: "",
-  status: "",
-  contactUser: "",
+  rfqNo: "", type: "", list: "", status: "", contactUser: "",
 });
-
 
 const currentPage = ref(1);
 const pageSize    = ref(10);
-
 
 const filteredRows = computed(() =>
   allRows.value.filter((r) => {
@@ -182,7 +98,6 @@ const pagedRows = computed(() => {
     .map((row, i) => ({ ...row, displayNo: start + i + 1 }));
 });
 
-
 watch([filteredRows, pageSize], () => { currentPage.value = 1; });
 </script>
 
@@ -192,22 +107,20 @@ watch([filteredRows, pageSize], () => { currentPage.value = 1; });
     role="user"
     email="Test.dev@itg.co.th"
   >
-   
+    <!-- ← เพิ่มตรงนี้ -->
+    <Toast position="top-right" />
+
     <RfqFilterBar
       :filters="filters"
       @update:filters="filters = $event"
       @open-drawer="drawer.openDrawer()"
     />
-
     <RfqTable :rows="pagedRows" />
-
     <RfqPagination
       v-model:page="currentPage"
       v-model:pageSize="pageSize"
       :total="filteredRows.length"
     />
-
-    
     <CreateDocument />
   </AppLayout>
 </template>

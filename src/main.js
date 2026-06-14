@@ -1,13 +1,14 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import PrimeVue from 'primevue/config'
-import Aura from '@primeuix/themes/aura'
-import { definePreset } from '@primeuix/themes'
-import 'primeicons/primeicons.css'
-import './style.css'
-import App from './App.vue'
-import router from './router/router.js'
-import i18n from './i18n'
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import PrimeVue from 'primevue/config';
+import Aura from '@primeuix/themes/aura';
+import { definePreset } from '@primeuix/themes';
+import 'primeicons/primeicons.css';
+import './style.css';
+import App from './App.vue';
+import router from './router/router.js';
+import i18n from './i18n';
+import ToastService from 'primevue/toastservice'
 
 const SmartRFQPreset = definePreset(Aura, {
   semantic: {
@@ -62,12 +63,13 @@ const SmartRFQPreset = definePreset(Aura, {
       }
     }
   }
-})
+});
 
-const app = createApp(App)
-app.use(createPinia())
-app.use(router)
-app.use(i18n)
+const app = createApp(App);
+app.use(createPinia());
+app.use(ToastService);
+app.use(router);
+app.use(i18n);
 app.use(PrimeVue, {
   theme: {
     preset: SmartRFQPreset,
@@ -75,15 +77,15 @@ app.use(PrimeVue, {
       darkModeSelector: '[data-theme="dark"]'
     }
   }
-})
+});
 
-app.mount('#app')
+app.mount('#app');
 
 
-const loader = document.getElementById('app-loading')
+const loader = document.getElementById('app-loading');
 if (loader) {
   requestAnimationFrame(() => {
-    loader.classList.add('fade-out')
-    loader.addEventListener('transitionend', () => loader.remove(), { once: true })
-  })
+    loader.classList.add('fade-out');
+    loader.addEventListener('transitionend', () => loader.remove(), { once: true });
+  });
 }

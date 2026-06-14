@@ -5,4 +5,25 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   base: '/',
   plugins: [vue()],
+
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/microsoft': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/health': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+    historyApiFallback: true,  
+  }
 })

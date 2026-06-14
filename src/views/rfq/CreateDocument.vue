@@ -1,11 +1,14 @@
 <script setup>
 import { ref, computed } from "vue";
+import { useToast } from "primevue/usetoast";
 import { useRFQDrawerStore } from "../../stores/rfqDrawer";
 import DatePicker from 'primevue/datepicker'
+import { apiFetch } from "../../utils/api";
 
 const drawer = useRFQDrawerStore();
-const show = computed(() => drawer.showDrawer);
-const category = computed(() => drawer.selectedCategory);
+const toast        = useToast();
+const isSubmitting = ref(false);
+const category     = computed(() => drawer.category)  
 
 const categoryTypeMap = {
   "project-revenue": "Project Revenue (I/O)",
@@ -20,6 +23,7 @@ const categoryTypeMap = {
   "fix-asset": "Fix Asset",
 };
 
+
 const prefilledType = computed(() =>
   category.value ? (categoryTypeMap[category.value.id] ?? "") : "",
 );
@@ -27,13 +31,11 @@ const prefilledType = computed(() =>
 const isTypeLocked = computed(() => !!prefilledType.value);
 
 import { watch } from "vue";
-watch(
-  prefilledType,
-  (val) => {
-    if (val) items.value[0].type = val;
-  },
-  { immediate: true },
-);
+watch(prefilledType, (val) => {
+  if (val && items.value.length > 0) {
+    items.value[0].type = val;
+  }
+}, { immediate: true });
 
 const allSteps = [
   { id: "user_fill", label: "User Fill\nData", role: "user" },
@@ -131,14 +133,127 @@ const footerActions = computed(() => {
   return [];
 });
 
-function handleAction(action) {
+async function handleAction(action) {
+  // Validate
+
   if (action === "cancel" || action === "draft") {
     drawer.closeDrawer();
+    return;
   }
   if (action === "add") {
     addItem();
+     toast.add({
+      severity: "info",
+      summary:  "Item added",
+      detail:   `Item ${items.value.length} added. (${items.value.length}/50)`,
+      closable: true,
+      life:     2500,
+    });
+    return;
   }
-  console.log("Action:", action, items.value);
+
+  if (action === "reject"){
+    isSubmitting.value = true;
+    try {
+      const res = await apiFetch(`${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/api/doc-request/reject`, {
+        method: "POST",
+        body:   JSON.stringify({ items: items.value }),
+      });
+
+      if (res.status === 401) {
+        toast.add({
+        severity: "error",
+        summary:  "Session expired",
+        detail:   "Please log in again.",
+        closable: true,
+        life:     5000,
+      });
+      router.push("/login"); 
+      return;
+      }
+
+      if(!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.add({
+          severity: "error",
+          summary: "Reject failed",
+          detail: body.message ?? `Server error (HTTP ${res.status})`,
+          closable: true,
+          life: 6000,
+        });
+        return;
+      }
+      toast.add({
+        severity: "warn",
+        summary: "Request rejected",
+        detail: "The RFQ has been rejected and returned to the requester.",
+        closable: true,
+        life: 4000,
+      });
+      drawer.closeDrawer();
+
+    } catch (err) {
+      toast.add({
+        severity: "error",
+        summary: "Network error",
+        detail: err.message,
+        closable: true,
+        life: 6000,
+      })
+    } finally {
+      isSubmitting.value = false;
+    }
+    return;
+  }
+  // Send Request (User) / Accept (Purchase)
+  if (action === "send" || action === "accept") {
+    const endpoint = action === "send"
+    ? `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/api/doc-request/create"` 
+    : `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/api/doc-request/accept`;
+
+    const successMsg = action === "send"
+    ? { summary: "Request sent",    detail: "Your RFQ has been submitted to Purchase." }
+    : { summary: "Request accepted", detail: "RFQ accepted and moved to next step." };
+     isSubmitting.value = true;
+
+     try {
+        const res = await fetch(endpoint, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body:    JSON.stringify({ items: items.value }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.add({
+          severity: "error",
+          summary:  `${action === "send" ? "Submit" : "Accept"} failed`,
+          detail:   body.message ?? `Server error (HTTP ${res.status})`,
+          closable: true,
+          life:     6000,
+        });
+        return;
+      }
+
+       toast.add({
+        severity: "success",
+        ...successMsg,
+        closable: true,
+        life:     4000,
+      });
+      drawer.closeDrawer();
+     } catch (err) {
+       toast.add({
+        severity: "error",
+        summary:  "Network error",
+        detail:   err.message,
+        closable: true,
+        life:     6000,
+      });
+     } finally {
+      isSubmitting.value = false;
+     }
+  }
 }
 
 function closeDrawer() {
@@ -707,15 +822,19 @@ function closeDrawer() {
                 </span>
               </div>
               <div class="footer-actions">
-                <button
-                  v-for="act in footerActions"
-                  :key="act.action"
-                  :class="`footer-btn footer-btn-${act.style}`"
-                  :disabled="act.action === 'add' && items.length >= 50"
-                  @click="handleAction(act.action)"
-                >
-                  {{ act.label }}
-                </button>
+               <button
+  v-for="act in footerActions"
+  :key="act.action"
+  :class="`footer-btn footer-btn-${act.style}`"
+  :disabled="(act.action === 'add' && items.length >= 50) || isSubmitting"
+  @click="handleAction(act.action)"
+>
+  <span v-if="isSubmitting && (act.action === 'send' || act.action === 'accept')">
+    <i class="pi pi-spin pi-spinner" style="font-size: 12px;" />
+    Processing…
+  </span>
+  <span v-else>{{ act.label }}</span>
+</button>
               </div>
             </div>
           </div>
@@ -1382,26 +1501,28 @@ select.inp option {
 }
 :deep(.p-datepicker-input) {
   width: 100%;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border-subtle, rgba(255,255,255,0.09));
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.09));
   border-radius: 8px;
   color: var(--text-primary, #fff);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 13px;
   padding: 8px 11px;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 :deep(.p-datepicker-input:focus) {
   border-color: var(--accent, #38a3f5);
-  box-shadow: 0 0 0 2px var(--accent-dim, rgba(56,163,245,0.15));
+  box-shadow: 0 0 0 2px var(--accent-dim, rgba(56, 163, 245, 0.15));
 }
 :deep(.p-datepicker-input::placeholder) {
-  color: var(--text-muted, rgba(255,255,255,0.25));
+  color: var(--text-muted, rgba(255, 255, 255, 0.25));
 }
 :deep(.p-datepicker-dropdown) {
-  background: var(--accent-dim, rgba(56,163,245,0.15));
-  border: 1px solid var(--border-accent, rgba(56,163,245,0.3));
+  background: var(--accent-dim, rgba(56, 163, 245, 0.15));
+  border: 1px solid var(--border-accent, rgba(56, 163, 245, 0.3));
   border-radius: 0 8px 8px 0;
   color: var(--accent, #38a3f5);
 }

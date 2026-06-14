@@ -40,7 +40,7 @@ const allLogs = ref([]);
 const totalRecords = ref(0);
 const loading = ref(false);
 
-const BASE_URL = `${import.meta.env.VITE_API_URL}/api/auditlog`;
+const BASE_URL = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/api/auditlog`;
 
 const chartLogs = ref([]);
 

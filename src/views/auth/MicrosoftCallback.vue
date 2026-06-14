@@ -9,14 +9,11 @@ const status = ref("loading");
 const errorMsg = ref("");
 const progress = ref(0);
 let progTimer = null;
+let _called = false;
 
-// ดึง code ออกจาก URL ทันที ก่อน component จะ mount
-// เพื่อป้องกัน code หายหลัง replaceState
 const params = new URLSearchParams(window.location.search);
 const code = params.get("code");
 const urlError = params.get("error");
-
-// ล้าง URL ทันที (ก่อน mount)
 
 const codeVerifier = sessionStorage.getItem("pkce_verifier") ?? "";
 sessionStorage.removeItem("pkce_verifier");
@@ -39,8 +36,6 @@ function animProg(target, ms) {
   }, 40);
 }
 
-// ใช้ module-level flag ป้องกัน double-invoke จริงๆ
-let _called = false;
 
 onMounted(async () => {
   if (_called) return;
@@ -60,7 +55,7 @@ onMounted(async () => {
   console.log("codeVerifier length:", codeVerifier.length);
 
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/microsoft/callback`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/microsoft/callback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       // ส่ง codeVerifier ไปด้วย

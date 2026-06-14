@@ -98,6 +98,7 @@ function openDrawer() {
           <option>Accept</option>
           <option>Waiting</option>
           <option>Resent</option>
+          <option>Reject</option>
           <option>Cancel</option>
         </select>
         <svg

@@ -168,5 +168,5 @@ td {
 .badge-cancel { background: var(--cancel-bg, rgba(148,163,184,0.16)); color: var(--cancel, #e2e8f0); border: 1px solid var(--cancel-border, rgba(148,163,184,0.35)); }
 
 .empty-cell { text-align: center; padding: 60px 0; }
-.empty-state { display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--text-muted, rgba(255,255,255,0.35)); font-size: 14px; }
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--text-muted, rgba(255,255,255,0.35)); font-size: 14px;  }
 </style>

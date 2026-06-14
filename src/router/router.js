@@ -5,7 +5,7 @@ const routes = [
   {
     path: "/login",
     name: "Login",
-    component: () => import("../views/auth/LoginUser.vue"),
+    component: () => import("../views/auth/LoginView.vue"),
     meta: { requiresGuest: true },
   },
   {
@@ -62,31 +62,32 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore();
   const token = auth.authToken;
   const role = auth.authRole;
 
-  if (to.meta.requiresAuth && !token) {
-    return next({ name: "Login" });
+  if (to.meta.requiresAuth && !auth.isAuthenticated){
+    const ok = await auth.restoreSession();
+    if(!ok) return '/login'
   }
 
-  if (to.meta.requiresGuest && token) {
+   if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    const ok = await auth.restoreSession()
+    if (!ok) return next({ name: "Login" }) 
+  }
+
+   if (to.meta.requiresGuest && auth.isAuthenticated) {
     return next({
-      name: role === "admin" ? "AdminDashboard" : "Doc Request",
-    });
+      name: auth.authRole === "admin" ? "AdminDashboard" : "Doc Request"
+    })
   }
 
   if (to.meta.requiresAuth && to.meta.role) {
-    if (role !== to.meta.role && role !== "admin") {
+    if (auth.authRole !== to.meta.role && auth.authRole !== "admin") {
       return next({
-        name:
-          role === "admin"
-            ? "AdminDashboard"
-            : role === "purchaser"
-              ? "Doc Request"
-              : "Doc Request",
-      });
+        name: auth.authRole === "admin" ? "AdminDashboard" : "Doc Request"
+      })
     }
   }
 

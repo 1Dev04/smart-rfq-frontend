@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted} from "vue";
+import { ref, onMounted } from "vue";
 import { DotLottieVue } from "@lottiefiles/dotlottie-vue";
 import { RouterView, useRoute } from "vue-router";
 import { useThemeStore } from "./stores/useThemeStore.js";
+import Toast from "primevue/toast";
 useThemeStore();
 const route = useRoute();
 const loading = ref(true);
@@ -14,9 +15,9 @@ onMounted(() => {
   }
   setTimeout(() => {
     loading.value = false;
-  }, 3000); 
+  }, 3000);
 });
-</script> 
+</script>
 
 <template>
   <div class="mobile-block">
@@ -44,6 +45,7 @@ onMounted(() => {
   </div>
 
   <div class="desktop-only">
+    <Toast />
     <Transition name="fade">
       <div v-if="loading" class="loading-screen">
         <div class="loading-bg-glow" />
@@ -53,7 +55,7 @@ onMounted(() => {
             src="https://res.cloudinary.com/dxoiu2cn5/image/upload/v1780472550/image0-removebg-preview_vcjesh.png"
             alt="Smart RFQ"
             class="loading-logo"
-          />
+          /> 
 
           <DotLottieVue
             class="loading-lottie"
