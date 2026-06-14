@@ -13,17 +13,9 @@ onMounted(() => {
     loading.value = false;
     return;
   }
-
-
-  const maxWait = setTimeout(() => {
+  setTimeout(() => {
     loading.value = false;
   }, 3000);
-
-  
-  window.addEventListener('load', () => {
-    clearTimeout(maxWait);
-    loading.value = false;
-  }, { once: true });
 });
 </script>
 
@@ -121,17 +113,24 @@ onMounted(() => {
 }
 
 .desktop-only {
-  display: block; 
+  display: none;
 }
 
 @media (max-width: 1023px) {
-  .mobile-block { display: flex; }
-  .desktop-only { display: none !important; }
+  .mobile-block {
+    display: flex;
+  }
+  .desktop-only {
+    display: none !important;
+  }
 }
-
 @media (min-width: 1024px) {
-  .mobile-block { display: none; }
-  .desktop-only { display: block; }
+  .mobile-block {
+    display: none;
+  }
+  .desktop-only {
+    display: block;
+  }
 }
 
 .loading-screen {

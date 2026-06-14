@@ -62,33 +62,39 @@ const router = createRouter({
   routes,
 });
 
+let sessionRestored = false;
+
 router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore();
-  const token = auth.authToken;
-  const role = auth.authRole;
 
-  if (to.meta.requiresAuth && !auth.isAuthenticated){
-    const ok = await auth.restoreSession();
-    if(!ok) return '/login'
+  // ── Restore session แค่ครั้งเดียวตอนเปิดแอป ──
+  if (!sessionRestored) {
+    await auth.restoreSession();
+    sessionRestored = true;
   }
 
-   if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    const ok = await auth.restoreSession()
-    if (!ok) return next({ name: "Login" }) 
-  }
+  const isAuth = auth.isAuthenticated;
+  const userRole = auth.authRole;
 
-   if (to.meta.requiresGuest && auth.isAuthenticated) {
-    return next({
-      name: auth.authRole === "admin" ? "AdminDashboard" : "Doc Request"
-    })
-  }
-
-  if (to.meta.requiresAuth && to.meta.role) {
-    if (auth.authRole !== to.meta.role && auth.authRole !== "admin") {
-      return next({
-        name: auth.authRole === "admin" ? "AdminDashboard" : "Doc Request"
-      })
+  // ── Route ที่ต้องการ Login ──
+  if (to.meta.requiresAuth) {
+    if (!isAuth) {
+      return next({ name: "Login" });
     }
+
+    // เช็ค role (admin เข้าได้ทุกหน้า)
+    if (to.meta.role && userRole !== to.meta.role && userRole !== "admin") {
+      return next({
+        name: userRole === "admin" ? "AdminDashboard" : "Doc Request",
+      });
+    }
+  }
+
+  // ── Route สำหรับ Guest เท่านั้น (login, forgot-password) ──
+  if (to.meta.requiresGuest && isAuth) {
+    return next({
+      name: userRole === "admin" ? "AdminDashboard" : "Doc Request",
+    });
   }
 
   next();
