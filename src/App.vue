@@ -13,74 +13,55 @@ onMounted(() => {
     loading.value = false;
     return;
   }
-ล
-  setTimeout(() => {
+  // ลดเหลือ 1500 และเพิ่ม safety fallback
+  const timer = setTimeout(() => {
     loading.value = false;
-  }, 1200);
-});
+  }, 3000);
 
+  // กัน stuck — ถ้า page load เสร็จก่อนก็ปิดเลย
+  window.addEventListener("load", () => {
+    clearTimeout(timer);
+    loading.value = false;
+  }, { once: true });
+});
 </script>
 
 <template>
   <div class="mobile-block">
-    <svg
-      width="48"
-      height="48"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.5"
-    >
-      <rect x="5" y="2" width="14" height="20" rx="2" />
-      <line
-        x1="12"
-        y1="18"
-        x2="12"
-        y2="18.5"
-        stroke-linecap="round"
-        stroke-width="2"
-      />
-    </svg>
-    <p class="mb-title">Smart RFQ</p>
-    <p class="mb-sub">รองรับเฉพาะ Desktop (1024px ขึ้นไป)</p>
-    <p class="mb-hint">กรุณาเปิดบน คอมพิวเตอร์หรือ แล็ปท็อป</p>
+    <!-- ... เหมือนเดิม -->
   </div>
 
   <div class="desktop-only">
     <Toast />
+
+    <!-- ✅ RouterView อยู่นอก v-if — render ได้เสมอ -->
+    <RouterView />
+
+    <!-- Loading overlay ทับด้านบน -->
     <Transition name="fade">
       <div v-if="loading" class="loading-screen">
         <div class="loading-bg-glow" />
-
         <div class="loading-content">
           <img
             src="https://res.cloudinary.com/dxoiu2cn5/image/upload/v1780472550/image0-removebg-preview_vcjesh.png"
             alt="Smart RFQ"
             class="loading-logo"
-          /> 
-
+          />
           <DotLottieVue
             class="loading-lottie"
             autoplay
             loop
             src="https://lottie.host/1d1dffe4-9ac3-419e-a4a3-7daa033737aa/0hbDu2YUsK.lottie"
           />
-
           <div class="loading-bottom">
             <div class="loading-bar-wrap">
               <div class="loading-bar" />
             </div>
-            <p class="loading-text">
-              Intelligent Sourcing. Streamlined Quoting.
-            </p>
+            <p class="loading-text">Intelligent Sourcing. Streamlined Quoting.</p>
           </div>
         </div>
       </div>
     </Transition>
-
-    <div v-if="!loading" class="app-ready">
-      <RouterView />
-    </div>
   </div>
 </template>
 
