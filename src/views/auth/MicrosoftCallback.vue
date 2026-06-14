@@ -50,9 +50,7 @@ onMounted(async () => {
     return;
   }
 
-  console.log("code:", code?.substring(0, 20));
-  console.log("codeVerifier:", codeVerifier);
-  console.log("codeVerifier length:", codeVerifier.length);
+
 
   try {
     const res = await fetch(`${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/microsoft/callback`, {
