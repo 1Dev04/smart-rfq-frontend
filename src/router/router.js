@@ -64,38 +64,27 @@ const router = createRouter({
 let sessionRestored = false;
 
 router.beforeEach(async (to, _from, next) => {
-  const auth = useAuthStore();
+  const auth = useAuthStore()
 
-  // Restore session แค่ครั้งเดียว
-  if (!sessionRestored) {
-    await auth.restoreSession();
-    sessionRestored = true;
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    const ok = await auth.restoreSession()
+    if (!ok) return next({ name: "Login" }) 
   }
 
-  const isAuth = auth.isAuthenticated;
-  const userRole = auth.authRole;
-
-  
-  if (to.meta.requiresAuth) {
-    if (!isAuth) {
-      return next({ name: "Login" });
-    }
- 
-    if (to.meta.role && userRole !== to.meta.role && userRole !== "admin") {
-      return next({
-        name: userRole === "admin" ? "AdminDashboard" : "Doc Request",
-      });
-    }
-  }
-
-  
-  if (to.meta.requiresGuest && isAuth) {
+  if (to.meta.requiresGuest && auth.isAuthenticated) {
     return next({
-      name: userRole === "admin" ? "AdminDashboard" : "Doc Request",
-    });
+      name: auth.authRole === "admin" ? "AdminDashboard" : "Doc Request"
+    })
   }
 
-  next();
-});
+  if (to.meta.requiresAuth && to.meta.role) {
+    const role = auth.authRole
+    // ✅ purchase และ user เข้าได้ทุก route ที่ไม่ใช่ admin
+    if (role !== "admin" && to.meta.role === "admin") {
+      return next({ name: "Doc Request" })
+    }
+  }
 
+  next()
+})
 export default router;
