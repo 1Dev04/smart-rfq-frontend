@@ -141,7 +141,7 @@ async function handleLogin() {
   
   try {
     
-    const BASE_URL = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
+    const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
     const payload = { email: cleanEmail + emailDomain, password: cleanPassword };
     
 
@@ -152,8 +152,6 @@ async function handleLogin() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
-   
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
