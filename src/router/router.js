@@ -38,7 +38,6 @@ const routes = [
     component: () => import("../views/rfq/Theme.vue"),
     meta: { requiresAuth: true, role: "user" },
   },
-
   {
     path: "/admin",
     name: "AdminDashboard",
@@ -67,7 +66,7 @@ let sessionRestored = false;
 router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore();
 
-  // ── Restore session แค่ครั้งเดียวตอนเปิดแอป ──
+  // Restore session แค่ครั้งเดียว
   if (!sessionRestored) {
     await auth.restoreSession();
     sessionRestored = true;
@@ -76,13 +75,12 @@ router.beforeEach(async (to, _from, next) => {
   const isAuth = auth.isAuthenticated;
   const userRole = auth.authRole;
 
-  // ── Route ที่ต้องการ Login ──
+  // requiresAuth: ยังไม่ login → ไป Login
   if (to.meta.requiresAuth) {
     if (!isAuth) {
       return next({ name: "Login" });
     }
-
-    // เช็ค role (admin เข้าได้ทุกหน้า)
+    // เช็ค role (admin ผ่านได้ทุกหน้า)
     if (to.meta.role && userRole !== to.meta.role && userRole !== "admin") {
       return next({
         name: userRole === "admin" ? "AdminDashboard" : "Doc Request",
@@ -90,7 +88,7 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
 
-  // ── Route สำหรับ Guest เท่านั้น (login, forgot-password) ──
+  // requiresGuest: login แล้วห้ามเข้า /login
   if (to.meta.requiresGuest && isAuth) {
     return next({
       name: userRole === "admin" ? "AdminDashboard" : "Doc Request",

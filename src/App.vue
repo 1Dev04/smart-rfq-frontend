@@ -13,10 +13,12 @@ onMounted(() => {
     loading.value = false;
     return;
   }
+ล
   setTimeout(() => {
     loading.value = false;
-  }, 3000);
+  }, 1200);
 });
+
 </script>
 
 <template>
