@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'  
+import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
@@ -8,9 +8,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor': ['vue', 'vue-router', 'pinia'],
-          'i18n': ['vue-i18n'],
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('vue-i18n')) return 'i18n'
+            if (id.includes('vue') || id.includes('pinia')) return 'vendor'
+          }
         }
       }
     }
