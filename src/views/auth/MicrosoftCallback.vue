@@ -18,6 +18,7 @@ const urlError = params.get("error");
 const codeVerifier = sessionStorage.getItem("pkce_verifier") ?? "";
 sessionStorage.removeItem("pkce_verifier");
 window.history.replaceState({}, "", "/auth/microsoft/callback");
+const BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND;
 
 function animProg(target, ms) {
   clearInterval(progTimer);
@@ -53,7 +54,7 @@ onMounted(async () => {
 
 
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/microsoft/callback`, {
+    const res = await fetch(`${BASE}/microsoft/callback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       // ส่ง codeVerifier ไปด้วย
