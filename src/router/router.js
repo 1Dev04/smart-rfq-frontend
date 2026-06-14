@@ -75,12 +75,12 @@ router.beforeEach(async (to, _from, next) => {
   const isAuth = auth.isAuthenticated;
   const userRole = auth.authRole;
 
-  // requiresAuth: ยังไม่ login → ไป Login
+  
   if (to.meta.requiresAuth) {
     if (!isAuth) {
       return next({ name: "Login" });
     }
-    // เช็ค role (admin ผ่านได้ทุกหน้า)
+ 
     if (to.meta.role && userRole !== to.meta.role && userRole !== "admin") {
       return next({
         name: userRole === "admin" ? "AdminDashboard" : "Doc Request",
@@ -88,7 +88,7 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
 
-  // requiresGuest: login แล้วห้ามเข้า /login
+  
   if (to.meta.requiresGuest && isAuth) {
     return next({
       name: userRole === "admin" ? "AdminDashboard" : "Doc Request",
