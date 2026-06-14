@@ -144,8 +144,6 @@ async function handleLogin() {
     const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
     const payload = { email: cleanEmail + emailDomain, password: cleanPassword };
     
-
-
     const res = await fetch(`${BASE}/api/auth/login`, {
       method: "POST",
       credentials: "include",

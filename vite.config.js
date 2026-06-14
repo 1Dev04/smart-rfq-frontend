@@ -1,11 +1,17 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-
-// https://vite.dev/config/
 export default defineConfig({
   base: '/',
   plugins: [vue()],
-
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['vue', 'vue-router', 'pinia'],
+          'i18n': ['vue-i18n'],
+        }
+      }
+    }
+  },
   server: {
     proxy: {
       '/api': {
@@ -23,7 +29,6 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-    },
-    historyApiFallback: true,  
+    }
   }
 })
