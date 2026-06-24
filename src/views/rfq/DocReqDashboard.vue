@@ -10,7 +10,7 @@ import CreateDocument from './CreateDocument.vue';
 import { useI18n } from "vue-i18n";
 
 const drawer = useRFQDrawerStore();
-const toast  = useToast();                             // ← เพิ่ม
+const toast  = useToast();                           
 const { t, locale } = useI18n();
 
 const lang = computed({
