@@ -32,6 +32,7 @@ async function fetchDocRequest() {
   try {
     const res = await fetch(`${BASE}/api/doc-request`, {
       headers: {
+        
         Accept: "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },

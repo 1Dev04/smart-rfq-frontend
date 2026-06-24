@@ -376,7 +376,6 @@ async function handleAction(action) {
         {
           method: "POST",
           headers: {
-       
             Accept: "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -507,6 +506,7 @@ async function fetchSapItems(params) {
     const data = await res.json();
     sapItemOptions.value = data.map((s) => ({
       code: s.code,
+      description: s.description
     }));
   } catch (err) {
     toast.add({
