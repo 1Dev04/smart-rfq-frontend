@@ -1,14 +1,19 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useRFQDrawerStore } from "../../stores/rfqDrawer";
-import DatePicker from 'primevue/datepicker'
+import DatePicker from "primevue/datepicker";
+import Select from "primevue/select";
 import { apiFetch } from "../../utils/api";
 
+import Message from "primevue/message";
+import InputText from "primevue/inputtext";
+
 const drawer = useRFQDrawerStore();
-const toast        = useToast();
+const toast = useToast();
 const isSubmitting = ref(false);
-const category     = computed(() => drawer.category)  
+const category = computed(() => drawer.category);
+const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
 
 const categoryTypeMap = {
   "project-revenue": "Project Revenue (I/O)",
@@ -23,7 +28,6 @@ const categoryTypeMap = {
   "fix-asset": "Fix Asset",
 };
 
-
 const prefilledType = computed(() =>
   category.value ? (categoryTypeMap[category.value.id] ?? "") : "",
 );
@@ -31,11 +35,15 @@ const prefilledType = computed(() =>
 const isTypeLocked = computed(() => !!prefilledType.value);
 
 import { watch } from "vue";
-watch(prefilledType, (val) => {
-  if (val && items.value.length > 0) {
-    items.value[0].type = val;
-  }
-}, { immediate: true });
+watch(
+  prefilledType,
+  (val) => {
+    if (val && items.value.length > 0) {
+      items.value[0].type = val;
+    }
+  },
+  { immediate: true },
+);
 
 const allSteps = [
   { id: "user_fill", label: "User Fill\nData", role: "user" },
@@ -62,8 +70,7 @@ function stepStatus(index) {
 const createEmptyItem = () => ({
   projectName: "",
   glCode: "",
-  sapItemNo: "new",
-  sapItemNoText: "",
+  sapItem: "",
   itemDescription: "",
   specPartNo: "",
   model: "",
@@ -87,7 +94,26 @@ const createEmptyItem = () => ({
   addressLocation: "",
   recommendVendor: "",
   remark: "",
+  attachDWG: null,
+  attachSpec: null,
+  attachQuotation: null,
+  attachEtc: null,
 });
+
+// ── Patterns ──
+const PATTERNS = {
+  brand: /^[a-zA-Z0-9\s\-&.,()]+$/,
+  forGas: /^[a-zA-Z0-9ก-๙\s\-/()%.,]+$/,
+  specPurity: /^[a-zA-Z0-9ก-๙\s%./\-(),]+$/,
+  cylinderType: /^[a-zA-Z0-9ก-๙\s%./\-(),]+$/,
+  uom: /^[a-zA-Z0-9/]+$/,
+  cylinderSize: /^\d+(\.\d+)?$/,
+  makerSource: /^[a-zA-Z0-9\s\-/&.,()]+$/,
+  requiredValve: /^[a-zA-Z0-9\s\-/(),']+$/,
+  noWeirdChars: /^[^@~#$^`*]+$/, // purposeApplication, addressLocation, remark
+  customer: /^[a-zA-Z0-9ก-๙\s\-.(),&']+$/,
+  recommendVendor: /^[a-zA-Z0-9ก-๙\s\-/&.,()]+$/,
+};
 
 const items = ref([createEmptyItem()]);
 
@@ -97,9 +123,35 @@ function addItem() {
   }
 }
 
+function clearError(index, field) {
+  const key = `items[${index}].${field}`;
+  if (errors.value[key]) {
+    delete errors.value[key];
+  }
+}
+
 function removeItem(index) {
   if (items.value.length > 1) {
     items.value.splice(index, 1);
+  }
+}
+
+const fileInputRefs = ref({});
+
+function onFileChange(event, item, field) {
+  item[field] = event.target.files[0] ?? null;
+  const idx = items.value.indexOf(item);
+  const key = `items[${idx}].attachDWG`;
+  if (errors.value[key]) delete errors.value[key];
+  clearError(idx, field);
+}
+
+function removeFile(item, field) {
+  const idx = items.value.indexOf(item);
+  item[field] = null;
+  const refKey = `${idx}_${field}`;
+  if (fileInputRefs.value[refKey]) {
+    fileInputRefs.value[refKey].value = "";
   }
 }
 
@@ -115,7 +167,42 @@ const typeOptions = [
   "Spare parts & Equipment For Gas",
   "Fix Asset",
 ];
-const glCodeOptions = ["GL-1001", "GL-1002", "GL-2001", "GL-3001", "GL-4001"];
+
+const glCodeOptions = ref([]);
+const isLoadingGlCodes = ref(false);
+
+async function fetchGlCodes() {
+  isLoadingGlCodes.value = true;
+  try {
+    const res = await fetch(`${BASE}/api/doc-request/gl-code`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    glCodeOptions.value = data.map((g) => ({
+      code: g.code,
+      description: g.description,
+    }));
+  } catch (err) {
+    toast.add({
+      severity: "error",
+      summary: "โหลด GL Code ไม่สำเร็จ",
+      detail: err.message,
+      life: 4000,
+    });
+  } finally {
+    isLoadingGlCodes.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchGlCodes();
+  fetchSapItems();
+});
 
 const footerActions = computed(() => {
   if (drawer.drawerRole === "user")
@@ -133,8 +220,25 @@ const footerActions = computed(() => {
   return [];
 });
 
+const errors = ref({});
+
+function validate() {
+  const result = resolver({ values: { items: items.value } });
+  errors.value = result.errors;
+  return Object.keys(result.errors).length === 0;
+}
+
 async function handleAction(action) {
   // Validate
+  if (!validate()) {
+    toast.add({
+      severity: "warn",
+      summary: "กรุณากรอกข้อมูลให้ครบ",
+      detail: "มีบางช่องที่ยังไม่ได้กรอก",
+      life: 4000,
+    });
+    return;
+  }
 
   if (action === "cancel" || action === "draft") {
     drawer.closeDrawer();
@@ -142,37 +246,40 @@ async function handleAction(action) {
   }
   if (action === "add") {
     addItem();
-     toast.add({
+    toast.add({
       severity: "info",
-      summary:  "Item added",
-      detail:   `Item ${items.value.length} added. (${items.value.length}/50)`,
+      summary: "Item added",
+      detail: `Item ${items.value.length} added. (${items.value.length}/50)`,
       closable: true,
-      life:     2500,
+      life: 2500,
     });
     return;
   }
 
-  if (action === "reject"){
+  if (action === "reject") {
     isSubmitting.value = true;
     try {
-      const res = await apiFetch(`${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/api/doc-request/reject`, {
-        method: "POST",
-        body:   JSON.stringify({ items: items.value }),
-      });
+      const res = await apiFetch(
+        `${BASE}/api/doc-request/reject`,
+        {
+          method: "POST",
+          body: JSON.stringify({ items: items.value }),
+        },
+      );
 
       if (res.status === 401) {
         toast.add({
-        severity: "error",
-        summary:  "Session expired",
-        detail:   "Please log in again.",
-        closable: true,
-        life:     5000,
-      });
-      router.push("/login"); 
-      return;
+          severity: "error",
+          summary: "Session expired",
+          detail: "Please log in again.",
+          closable: true,
+          life: 5000,
+        });
+        router.push("/login");
+        return;
       }
 
-      if(!res.ok) {
+      if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         toast.add({
           severity: "error",
@@ -191,7 +298,6 @@ async function handleAction(action) {
         life: 4000,
       });
       drawer.closeDrawer();
-
     } catch (err) {
       toast.add({
         severity: "error",
@@ -199,62 +305,437 @@ async function handleAction(action) {
         detail: err.message,
         closable: true,
         life: 6000,
-      })
+      });
     } finally {
       isSubmitting.value = false;
     }
     return;
   }
-  // Send Request (User) / Accept (Purchase)
-  if (action === "send" || action === "accept") {
-    const endpoint = action === "send"
-    ? `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/api/doc-request/create"` 
-    : `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/api/doc-request/accept`;
 
-    const successMsg = action === "send"
-    ? { summary: "Request sent",    detail: "Your RFQ has been submitted to Purchase." }
-    : { summary: "Request accepted", detail: "RFQ accepted and moved to next step." };
-     isSubmitting.value = true;
+  // Send (User only)
+  if (action === "send") {
+    isSubmitting.value = true;
+    try {
+      const formData = new FormData();
 
-     try {
-        const res = await fetch(endpoint, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body:    JSON.stringify({ items: items.value }),
+      items.value.forEach((item, i) => {
+        // ── Text fields ──
+        formData.append(
+          `items[${i}][targetPURreply]`,
+          item.targetPURreply instanceof Date
+            ? item.targetPURreply.toISOString().slice(0, 10)
+            : (item.targetPURreply ?? ""),
+        );
+        formData.append(`items[${i}][projectName]`, item.projectName ?? "");
+        formData.append(`items[${i}][glCode]`, item.glCode ?? "");
+        formData.append(`items[${i}][sapItem]`, item.sapItem ?? "");
+        formData.append(
+          `items[${i}][itemDescription]`,
+          item.itemDescription ?? "",
+        );
+        formData.append(`items[${i}][specPartNo]`, item.specPartNo ?? "");
+        formData.append(`items[${i}][model]`, item.model ?? "");
+        formData.append(`items[${i}][brand]`, item.brand ?? "");
+        formData.append(`items[${i}][forGas]`, item.forGas ?? "");
+        formData.append(`items[${i}][type]`, item.type ?? "");
+        formData.append(`items[${i}][specPurity]`, item.specPurity ?? "");
+        formData.append(`items[${i}][cylinderType]`, item.cylinderType ?? "");
+        formData.append(`items[${i}][quantity]`, item.quantity ?? "");
+        formData.append(`items[${i}][uom]`, item.uom ?? "");
+        formData.append(`items[${i}][cylinderSize]`, item.cylinderSize ?? "");
+        formData.append(`items[${i}][makerSource]`, item.makerSource ?? "");
+        formData.append(`items[${i}][requiredValve]`, item.requiredValve ?? "");
+        formData.append(
+          `items[${i}][purposeApplication]`,
+          item.purposeApplication ?? "",
+        );
+        formData.append(`items[${i}][customer]`, item.customer ?? "");
+        formData.append(
+          `items[${i}][addressLocation]`,
+          item.addressLocation ?? "",
+        );
+        formData.append(
+          `items[${i}][recommendVendor]`,
+          item.recommendVendor ?? "",
+        );
+        formData.append(`items[${i}][remark]`, item.remark ?? "");
+
+        // ── Files (ถ้ามี) ──
+        if (item.attachDWG)
+          formData.append(`items[${i}][attachDWG]`, item.attachDWG);
+        if (item.attachSpec)
+          formData.append(`items[${i}][attachSpec]`, item.attachSpec);
+        if (item.attachQuotation)
+          formData.append(`items[${i}][attachQuotation]`, item.attachQuotation);
+        if (item.attachEtc)
+          formData.append(`items[${i}][attachEtc]`, item.attachEtc);
       });
+
+      const res = await fetch(
+        `${BASE}/api/doc-request/create`,
+        {
+          method: "POST",
+          headers: {
+       
+            Accept: "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: formData,
+        },
+      );
+
+      if (res.status === 401) {
+        toast.add({
+          severity: "error",
+          summary: "Session expired",
+          detail: "Please log in again.",
+          closable: true,
+          life: 5000,
+        });
+        return;
+      }
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         toast.add({
           severity: "error",
-          summary:  `${action === "send" ? "Submit" : "Accept"} failed`,
-          detail:   body.message ?? `Server error (HTTP ${res.status})`,
+          summary: "Submit failed",
+          detail: body.message ?? `Server error (HTTP ${res.status})`,
           closable: true,
-          life:     6000,
+          life: 6000,
         });
         return;
       }
 
-       toast.add({
+      toast.add({
         severity: "success",
-        ...successMsg,
+        summary: "Request sent",
+        detail: "Your RFQ has been submitted to Purchase.",
         closable: true,
-        life:     4000,
+        life: 4000,
       });
       drawer.closeDrawer();
-     } catch (err) {
-       toast.add({
+    } catch (err) {
+      toast.add({
         severity: "error",
-        summary:  "Network error",
-        detail:   err.message,
+        summary: "Network error",
+        detail: err.message,
         closable: true,
-        life:     6000,
+        life: 6000,
       });
-     } finally {
+    } finally {
       isSubmitting.value = false;
-     }
+    }
+  }
+
+  // Accept (Purchase only)
+  if (action === "accept") {
+    isSubmitting.value = true;
+    try {
+      const res = await fetch(
+        `${BASE}/api/doc-request/accept`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ items: items.value }),
+        },
+      );
+
+      if (res.status === 401) {
+        toast.add({
+          severity: "error",
+          summary: "Session expired",
+          detail: "Please log in again.",
+          closable: true,
+          life: 5000,
+        });
+        return;
+      }
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.add({
+          severity: "error",
+          summary: "Accept failed",
+          detail: body.message ?? `Server error (HTTP ${res.status})`,
+          closable: true,
+          life: 6000,
+        });
+        return;
+      }
+
+      toast.add({
+        severity: "success",
+        summary: "Request accepted",
+        detail: "RFQ accepted and moved to next step.",
+        closable: true,
+        life: 4000,
+      });
+      drawer.closeDrawer();
+    } catch (err) {
+      toast.add({
+        severity: "error",
+        summary: "Network error",
+        detail: err.message,
+        closable: true,
+        life: 6000,
+      });
+    } finally {
+      isSubmitting.value = false;
+    }
   }
 }
+
+// ── SAP Options ──
+const sapItemOptions = ref([]);
+const isLoadingSapItems = ref(false);
+
+async function fetchSapItems(params) {
+  isLoadingSapItems.value = true;
+  try {
+    const res = await fetch(`${BASE}/api/doc-request/sap-item`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    sapItemOptions.value = data.map((s) => ({
+      code: s.code,
+    }));
+  } catch (err) {
+    toast.add({
+      severity: "error",
+      summary: "โหลด SAP Item ไม่สำเร็จ",
+      detail: err.message,
+      life: 4000,
+    });
+  } finally {
+    isLoadingSapItems.value = false;
+  }
+}
+
+// validation rules
+const resolver = ({ values }) => {
+  const errors = {};
+
+  values.items?.forEach((item, i) => {
+    // ── General Info ──
+    if (!item.targetPURreply)
+      if (!item.targetPURreply)
+        errors[`items[${i}].targetPURreply`] = [
+          { message: "กรุณาเลือก Target PUR Reply" },
+        ];
+
+    if (!item.projectName?.trim())
+      errors[`items[${i}].projectName`] = [
+        { message: "กรุณากรอก Project Name" },
+      ];
+    else if (item.projectName.trim().length > 150)
+      errors[`items[${i}].projectName`] = [
+        { message: "Project Name ต้องไม่เกิน 150 ตัวอักษร" },
+      ];
+
+    if (!item.glCode)
+      errors[`items[${i}].glCode`] = [{ message: "กรุณาเลือก GL Code" }];
+
+    if (!item.sapItem)
+      errors[`items[${i}].sapItem`] = [
+        { message: "กรุณากเลือก SAP Item Number" },
+      ];
+
+    if (!item.itemDescription?.trim())
+      errors[`items[${i}].itemDescription`] = [
+        { message: "กรุณากรอก Item Description" },
+      ];
+    else if (item.itemDescription.trim().length > 500)
+      errors[`items[${i}].itemDescription`] = [
+        { message: "Item Description ต้องไม่เกิน 500 ตัวอักษร" },
+      ];
+
+    if (!item.specPartNo?.trim())
+      errors[`items[${i}].specPartNo`] = [
+        { message: "กรุณากรอก Specification / Part No." },
+      ];
+    else if (item.specPartNo.trim().length > 200)
+      errors[`items[${i}].specPartNo`] = [
+        { message: "Spec / Part No. ต้องไม่เกิน 200 ตัวอักษร" },
+      ];
+
+    if (item.model?.trim().length > 100)
+      errors[`items[${i}].model`] = [
+        { message: "Model ต้องไม่เกิน 100 ตัวอักษร" },
+      ];
+
+    if (!item.brand?.trim())
+      errors[`items[${i}].brand`] = [{ message: "กรุณากรอก Brand" }];
+    else if (item.brand.trim().length > 100)
+      errors[`items[${i}].brand`] = [
+        { message: "Brand ต้องไม่เกิน 100 ตัวอักษร" },
+      ];
+    else if (!PATTERNS.brand.test(item.brand.trim()))
+      errors[`items[${i}].brand`] = [
+        { message: "Brand ใช้ได้เฉพาะภาษาอังกฤษ ตัวเลข และ - & . , ( )" },
+      ];
+
+    if (!item.forGas?.trim())
+      errors[`items[${i}].forGas`] = [{ message: "กรุณากรอก For GAS" }];
+    else if (item.forGas.trim().length > 100)
+      errors[`items[${i}].forGas`] = [
+        { message: "For GAS ต้องไม่เกิน 100 ตัวอักษร" },
+      ];
+    else if (!PATTERNS.forGas.test(item.forGas.trim()))
+      errors[`items[${i}].forGas`] = [
+        { message: "For GAS มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
+      ];
+
+    if (!item.attachDWG)
+      errors[`items[${i}].attachDWG`] = [
+        { message: "กรุณาแนบไฟล์ DWG หรือ Specification อย่างน้อย 1 ไฟล์" },
+      ];
+
+    if (!item.type)
+      errors[`items[${i}].type`] = [{ message: "กรุณาเลือก Type" }];
+
+    if (!item.specPurity?.trim())
+      errors[`items[${i}].specPurity`] = [
+        { message: "กรุณากรอก Specification / Purity" },
+      ];
+
+    if (!item.cylinderType?.trim())
+      errors[`items[${i}].cylinderType`] = [
+        { message: "กรุณากรอก Cylinder Type" },
+      ];
+    else if (item.cylinderType.trim().length > 100)
+      errors[`items[${i}].cylinderType`] = [
+        { message: "Cylinder Type ต้องไม่เกิน 100 ตัวอักษร" },
+      ];
+    else if (!PATTERNS.cylinderType.test(item.cylinderType.trim()))
+      errors[`items[${i}].cylinderType`] = [
+        { message: "Cylinder Type มีอักขระที่ไม่อนุญาต" },
+      ];
+
+    if (
+      !item.quantity ||
+      !Number.isInteger(Number(item.quantity)) ||
+      Number(item.quantity) <= 0
+    )
+      errors[`items[${i}].quantity`] = [
+        { message: "กรุณากรอก Quantity เป็นจำนวนเต็มและมากกว่า 0" },
+      ];
+
+    if (!item.uom?.trim())
+      errors[`items[${i}].uom`] = [{ message: "กรุณากรอก UOM" }];
+    else if (item.uom.trim().length > 20)
+      errors[`items[${i}].uom`] = [{ message: "UOM ต้องไม่เกิน 20 ตัวอักษร" }];
+    else if (!PATTERNS.uom.test(item.uom.trim()))
+      errors[`items[${i}].uom`] = [
+        { message: "UOM ใช้ได้เฉพาะภาษาอังกฤษ ตัวเลข และ /" },
+      ];
+
+    if (!item.cylinderSize?.trim())
+      errors[`items[${i}].cylinderSize`] = [
+        { message: "กรุณากรอก Cylinder Size" },
+      ];
+    else if (!PATTERNS.cylinderSize.test(item.cylinderSize.trim()))
+      errors[`items[${i}].cylinderSize`] = [
+        { message: "Cylinder Size ต้องเป็นตัวเลขเท่านั้น เช่น 50 หรือ 47.5" },
+      ];
+
+    if (!item.makerSource?.trim())
+      errors[`items[${i}].makerSource`] = [
+        { message: "กรุณากรอก Maker / Source" },
+      ];
+    else if (item.makerSource.trim().length > 150)
+      errors[`items[${i}].makerSource`] = [
+        { message: "Maker / Source ต้องไม่เกิน 150 ตัวอักษร" },
+      ];
+    else if (!PATTERNS.makerSource.test(item.makerSource.trim()))
+      errors[`items[${i}].makerSource`] = [
+        {
+          message:
+            "Maker / Source ใช้ได้เฉพาะภาษาอังกฤษ ตัวเลข และ - / & . , ( )",
+        },
+      ];
+
+    if (!item.requiredValve?.trim())
+      errors[`items[${i}].requiredValve`] = [
+        { message: "กรุณากรอก Required Type Valve" },
+      ];
+    else if (item.requiredValve.trim().length > 100)
+      errors[`items[${i}].requiredValve`] = [
+        { message: "Required Valve ต้องไม่เกิน 100 ตัวอักษร" },
+      ];
+    else if (!PATTERNS.requiredValve.test(item.requiredValve.trim()))
+      errors[`items[${i}].requiredValve`] = [
+        { message: "Required Valve มีอักขระที่ไม่อนุญาต" },
+      ];
+
+    if (!item.purposeApplication?.trim())
+      errors[`items[${i}].purposeApplication`] = [
+        { message: "กรุณากรอก Purpose / Application" },
+      ];
+    else if (item.purposeApplication.trim().length > 300)
+      errors[`items[${i}].purposeApplication`] = [
+        { message: "Purpose / Application ต้องไม่เกิน 300 ตัวอักษร" },
+      ];
+    else if (!PATTERNS.noWeirdChars.test(item.purposeApplication.trim()))
+      errors[`items[${i}].purposeApplication`] = [
+        { message: "มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
+      ];
+
+    if (!item.customer?.trim())
+      errors[`items[${i}].customer`] = [{ message: "กรุณากรอก Customer" }];
+    else if (item.customer.trim().length > 150)
+      errors[`items[${i}].customer`] = [
+        { message: "Customer ต้องไม่เกิน 150 ตัวอักษร" },
+      ];
+    else if (!PATTERNS.customer.test(item.customer.trim()))
+      errors[`items[${i}].customer`] = [
+        { message: "Customer มีอักขระที่ไม่อนุญาต" },
+      ];
+
+    if (!item.addressLocation?.trim())
+      errors[`items[${i}].addressLocation`] = [
+        { message: "กรุณากรอก Address / Location" },
+      ];
+    else if (item.addressLocation.trim().length > 300)
+      errors[`items[${i}].addressLocation`] = [
+        { message: "Address ต้องไม่เกิน 300 ตัวอักษร" },
+      ];
+    else if (!PATTERNS.noWeirdChars.test(item.addressLocation.trim()))
+      errors[`items[${i}].addressLocation`] = [
+        { message: "Address มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
+      ];
+
+    if (!item.recommendVendor?.trim())
+      errors[`items[${i}].recommendVendor`] = [
+        { message: "กรุณากรอก Recommend Vendor / Brand" },
+      ];
+    else if (item.recommendVendor.trim().length > 200)
+      errors[`items[${i}].recommendVendor`] = [
+        { message: "Recommend Vendor ต้องไม่เกิน 200 ตัวอักษร" },
+      ];
+    else if (!PATTERNS.recommendVendor.test(item.recommendVendor.trim()))
+      errors[`items[${i}].recommendVendor`] = [
+        { message: "Recommend Vendor มีอักขระที่ไม่อนุญาต" },
+      ];
+
+    if (!item.remark?.trim())
+      errors[`items[${i}].remark`] = [{ message: "กรุณากรอก Remark" }];
+    else if (item.remark.trim().length > 500)
+      errors[`items[${i}].remark`] = [
+        { message: "Remark ต้องไม่เกิน 500 ตัวอักษร" },
+      ];
+  });
+
+  return { errors };
+};
 
 function closeDrawer() {
   drawer.closeDrawer();
@@ -412,25 +893,17 @@ function closeDrawer() {
                         <label>RFQ No.</label>
                         <div class="inp-auto">Auto · EN-YYMMDD-XX</div>
                       </div>
-                    </div>
-
-                    <div class="field-row stagger-2">
                       <div class="field field-auto">
                         <label>Rev. No.</label>
-                        <div class="inp-auto">Auto · Original Rev.01</div>
-                      </div>
-                      <div class="field field-auto">
-                        <label>Item No.</label>
-                        <div class="inp-auto">
-                          Auto · {{ String(index + 1).padStart(2, "0") }}
-                        </div>
+                        <div class="inp-auto">Auto · Rev.00</div>
                       </div>
                     </div>
 
                     <div class="field stagger-3">
-                      <label>Target PUR Reply</label>
+                      <label>Target PUR Reply <span class="req">*</span></label>
                       <DatePicker
                         v-model="item.targetPURreply"
+                        @update:modelValue="clearError(index, 'targetPURreply')"
                         showIcon
                         fluid
                         :showOnFocus="false"
@@ -438,85 +911,200 @@ function closeDrawer() {
                         dateFormat="dd/mm/yy"
                         placeholder="DD/MM/YYYY"
                         class="inp-datepicker"
+                        :class="{
+                          'inp-error': errors[`items[${index}].targetPURreply`],
+                        }"
                       />
-                      <span class="field-hint"
-                        >Non back-date · calendar select</span
+                      <Message
+                        v-if="errors[`items[${index}].targetPURreply`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
                       >
+                        {{
+                          errors[`items[${index}].targetPURreply`][0].message
+                        }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-4">
-                      <label>Project Name</label>
+                      <label>Project Name<span class="req">*</span></label>
                       <input
                         v-model="item.projectName"
+                        @input="clearError(index, 'projectName')"
                         type="text"
                         class="inp"
+                        maxlength="150"
                         placeholder="Enter project name"
+                        :class="{
+                          'inp-error': errors[`items[${index}].projectName`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].projectName`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].projectName`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-5">
-                      <label>GL Code</label>
-                      <select v-model="item.glCode" class="inp">
-                        <option value="">— Select GL Code —</option>
-                        <option v-for="g in glCodeOptions" :key="g" :value="g">
-                          {{ g }}
-                        </option>
-                      </select>
+                      <label>GL Code <span class="req">*</span></label>
+                      <Select
+                        v-model="item.glCode"
+                        @update:modelValue="clearError(index, 'glCode')"
+                        :options="glCodeOptions"
+                        optionLabel="description"
+                        optionValue="code"
+                        :placeholder="
+                          isLoadingGlCodes
+                            ? 'กำลังโหลด...'
+                            : '— Select GL Code —'
+                        "
+                        :loading="isLoadingGlCodes"
+                        filter
+                        filterPlaceholder="Search GL Code..."
+                        showClear
+                        class="gl-select"
+                        :class="{
+                          'inp-error-select': errors[`items[${index}].glCode`],
+                        }"
+                        :pt="{
+                          root: { style: 'width: 100%' },
+                        }"
+                      >
+                        <!-- Custom option แสดง code + label -->
+                        <template #option="{ option }">
+                          <div class="gl-option">
+                            <span class="gl-code">{{ option.code }}</span>
+                            <span class="gl-desc">{{
+                              option.description
+                            }}</span>
+                          </div>
+                        </template>
+
+                        <!-- แสดงค่าที่เลือกแล้ว -->
+                        <template #value="{ value }">
+                          <span v-if="value">
+                            {{ value }} ·
+                            {{
+                              glCodeOptions.find((g) => g.code === value)
+                                ?.description
+                            }}
+                          </span>
+                          <span v-else class="gl-placeholder"
+                            >— Select GL Code —</span
+                          >
+                        </template>
+                      </Select>
+
+                      <p
+                        v-if="errors[`items[${index}].glCode`]"
+                        class="field-error"
+                      >
+                        {{ errors[`items[${index}].glCode`][0].message }}
+                      </p>
                     </div>
 
                     <div class="field stagger-6">
                       <label>SAP Item No.</label>
-                      <div class="radio-group">
-                        <label
-                          class="radio-opt"
-                          :class="{ active: item.sapItemNo === 'new' }"
-                        >
-                          <input
-                            v-model="item.sapItemNo"
-                            type="radio"
-                            value="new"
-                          />
-                          <span>New</span>
-                        </label>
-                        <label
-                          class="radio-opt"
-                          :class="{ active: item.sapItemNo === 'existing' }"
-                        >
-                          <input
-                            v-model="item.sapItemNo"
-                            type="radio"
-                            value="existing"
-                          />
-                          <span>SAP Item No.</span>
-                        </label>
-                      </div>
-                      <input
-                        v-if="item.sapItemNo === 'existing'"
-                        v-model="item.sapItemNoText"
-                        type="text"
-                        class="inp mt-6"
-                        placeholder="Enter SAP item number"
-                      />
+                      <Select
+                        v-model="item.sapItem"
+                        @update:modelValue="clearError(index, 'sapItem')"
+                        :options="sapItemOptions"
+                        optionLabel="description"
+                        optionValue="code"
+                        :placeholder="
+                          isLoadingSapItems
+                            ? 'กำลังโหลด...'
+                            : '— Select SAP Item —'
+                        "
+                        :loading="isLoadingSapItems"
+                        filter
+                        filterPlaceholder="Search SAP Item..."
+                        showClear
+                        class="gl-select"
+                        :pt="{ root: { style: 'width: 100%' } }"
+                      >
+                        <template #option="{ option }">
+                          <div class="gl-option">
+                            <span class="gl-code">{{ option.code }}</span>
+                            <span class="gl-desc">{{
+                              option.description
+                            }}</span>
+                          </div>
+                        </template>
+                        <template #value="{ value }">
+                          <span v-if="value">
+                            {{ value }} ·
+                            {{
+                              sapItemOptions.find((s) => s.code === value)
+                                ?.description
+                            }}
+                          </span>
+                          <span v-else class="gl-placeholder"
+                            >— Select SAP Item —</span
+                          >
+                        </template>
+                      </Select>
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มีใน SAP</span
+                      >
                     </div>
 
                     <div class="field stagger-7">
-                      <label>Item Description</label>
+                      <label>Item Description <span class="req">*</span></label>
                       <input
                         v-model="item.itemDescription"
+                        @input="clearError(index, 'itemDescription')"
                         type="text"
                         class="inp"
+                        maxlength="500"
                         placeholder="Item description"
+                        :class="{
+                          'inp-error':
+                            errors[`items[${index}].itemDescription`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].itemDescription`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{
+                          errors[`items[${index}].itemDescription`][0].message
+                        }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-8">
-                      <label>Specification / Part No.</label>
+                      <label
+                        >Specification / Part No.<span class="req"
+                          >*</span
+                        ></label
+                      >
                       <input
                         v-model="item.specPartNo"
+                        @input="clearError(index, 'specPartNo')"
                         type="text"
                         class="inp"
+                        maxlength="200"
                         placeholder="Spec or part number"
+                        :class="{
+                          'inp-error': errors[`items[${index}].specPartNo`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].specPartNo`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].specPartNo`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-9">
@@ -525,6 +1113,7 @@ function closeDrawer() {
                         v-model="item.model"
                         type="text"
                         class="inp"
+                        maxlength="100"
                         placeholder="Fix Model or N/A"
                       />
                       <span class="field-hint"
@@ -534,29 +1123,67 @@ function closeDrawer() {
 
                     <div class="field-row stagger-10">
                       <div class="field">
-                        <label>Brand</label>
+                        <label>Brand<span class="req">*</span></label>
                         <input
                           v-model="item.brand"
+                          @input="clearError(index, 'brand')"
                           type="text"
                           class="inp"
+                          maxlength="100"
                           placeholder="Brand name"
+                          :class="{
+                            'inp-error': errors[`items[${index}].brand`],
+                          }"
                         />
+                        <Message
+                          v-if="errors[`items[${index}].brand`]"
+                          severity="error"
+                          size="small"
+                          variant="simple"
+                        >
+                          {{ errors[`items[${index}].brand`][0].message }}
+                        </Message>
                       </div>
                       <div class="field">
-                        <label>For GAS</label>
+                        <label>For GAS<span class="req">*</span></label>
                         <input
                           v-model="item.forGas"
+                          @input="clearError(index, 'forGas')"
                           type="text"
                           class="inp"
+                          maxlength="100"
                           placeholder="Gas type"
+                          :class="{
+                            'inp-error': errors[`items[${index}].forGas`],
+                          }"
                         />
+                        <Message
+                          v-if="errors[`items[${index}].forGas`]"
+                          severity="error"
+                          size="small"
+                          variant="simple"
+                        >
+                          {{ errors[`items[${index}].forGas`][0].message }}
+                        </Message>
                       </div>
                     </div>
 
                     <div class="field stagger-11">
-                      <label>DWG or Specification</label>
-                      <div class="attach-grid">
-                        <label class="attach-btn">
+                      <label
+                        >DWG or Specification <span class="req">*</span></label
+                      >
+
+                      <!-- DWG -->
+                      <div class="attach-wrap">
+                        <label
+                          class="attach-btn"
+                          :class="{
+                            'attach-btn-error':
+                              errors[`items[${index}].attachDWG`] &&
+                              !item.attachDWG,
+                            'attach-btn-done': item.attachDWG,
+                          }"
+                        >
                           <svg
                             width="13"
                             height="13"
@@ -570,65 +1197,180 @@ function closeDrawer() {
                               d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
                             />
                           </svg>
-                          DWG
+                          <span class="attach-name">{{
+                            item.attachDWG ? item.attachDWG.name : "DWG"
+                          }}</span>
                           <input
                             type="file"
                             class="file-hidden"
-                            accept=".dwg,.dxf"
+                            accept=".dwg,.dxf,.png,.pdf"
+                            :ref="
+                              (el) => {
+                                if (el)
+                                  fileInputRefs[`${index}_attachDWG`] = el;
+                              }
+                            "
+                            @change="onFileChange($event, item, 'attachDWG')"
                           />
                         </label>
-                        <label class="attach-btn">
-                          <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                          >
-                            <path
-                              d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
-                            />
-                          </svg>
-                          Spec
-                          <input type="file" class="file-hidden" />
-                        </label>
-                        <label class="attach-btn">
-                          <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                          >
-                            <path
-                              d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
-                            />
-                          </svg>
-                          Last Quotation
-                          <input type="file" class="file-hidden" />
-                        </label>
-                        <label class="attach-btn">
-                          <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                          >
-                            <path
-                              d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
-                            />
-                          </svg>
-                          ETC.
-                          <input type="file" class="file-hidden" />
-                        </label>
+                        <!-- ✅ ปุ่มลบ — แสดงเฉพาะมีไฟล์ -->
+                        <button
+                          v-if="item.attachDWG"
+                          class="attach-remove"
+                          @click.prevent="removeFile(item, 'attachDWG')"
+                          title="ลบไฟล์"
+                        >
+                          <i class="pi pi-trash"></i>
+                        </button>
                       </div>
+
+                      <!-- Spec -->
+                      <div class="attach-wrap">
+                        <label
+                          class="attach-btn"
+                          :class="{ 'attach-btn-done': item.attachSpec }"
+                        >
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                          >
+                            <path
+                              d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
+                            />
+                          </svg>
+                          <span class="attach-name">{{
+                            item.attachSpec ? item.attachSpec.name : "Spec"
+                          }}</span>
+                          <input
+                            type="file"
+                            class="file-hidden"
+                            :ref="
+                              (el) => {
+                                if (el)
+                                  fileInputRefs[`${index}_attachSpec`] = el;
+                              }
+                            "
+                            @change="onFileChange($event, item, 'attachSpec')"
+                          />
+                        </label>
+
+                        <button
+                          v-if="item.attachSpec"
+                          class="attach-remove"
+                          @click.prevent="removeFile(item, 'attachSpec')"
+                          title="ลบไฟล์"
+                        >
+                          <i class="pi pi-trash"></i>
+                        </button>
+                      </div>
+
+                      <!-- Last Quotation -->
+                      <div class="attach-wrap">
+                        <label
+                          class="attach-btn"
+                          :class="{ 'attach-btn-done': item.attachQuotation }"
+                        >
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                          >
+                            <path
+                              d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
+                            />
+                          </svg>
+                          <span class="attach-name">{{
+                            item.attachQuotation
+                              ? item.attachQuotation.name
+                              : "Last Quotation"
+                          }}</span>
+                          <input
+                            type="file"
+                            class="file-hidden"
+                            :ref="
+                              (el) => {
+                                if (el)
+                                  fileInputRefs[`${index}_attachQuotation`] =
+                                    el;
+                              }
+                            "
+                            @change="
+                              onFileChange($event, item, 'attachQuotation')
+                            "
+                          />
+                        </label>
+                        <button
+                          v-if="item.attachQuotation"
+                          class="attach-remove"
+                          @click.prevent="removeFile(item, 'attachQuotation')"
+                          title="ลบไฟล์"
+                        >
+                          <i class="pi pi-trash"></i>
+                        </button>
+                      </div>
+
+                      <!-- ETC -->
+                      <div class="attach-wrap">
+                        <label
+                          class="attach-btn"
+                          :class="{ 'attach-btn-done': item.attachEtc }"
+                        >
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                          >
+                            <path
+                              d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
+                            />
+                          </svg>
+                          <span class="attach-name">{{
+                            item.attachEtc ? item.attachEtc.name : "ETC."
+                          }}</span>
+                          <input
+                            type="file"
+                            class="file-hidden"
+                            :ref="
+                              (el) => {
+                                if (el)
+                                  fileInputRefs[`${index}_attachEtc`] = el;
+                              }
+                            "
+                            @change="onFileChange($event, item, 'attachEtc')"
+                          />
+                        </label>
+                        <button
+                          v-if="item.attachEtc"
+                          class="attach-remove"
+                          @click.prevent="removeFile(item, 'attachEtc')"
+                          title="ลบไฟล์"
+                        >
+                          <i class="pi pi-trash"></i>
+                        </button>
+                      </div>
+
+                      <!-- ✅ Message อยู่นอก attach-grid -->
+                      <Message
+                        v-if="errors[`items[${index}].attachDWG`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].attachDWG`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-12">
@@ -662,136 +1404,330 @@ function closeDrawer() {
                         <div class="inp-auto">Auto · System Date</div>
                       </div>
                       <div class="field">
-                        <label>Type</label>
-                        <select v-model="item.type" class="inp">
+                        <label>Type <span class="req">*</span></label>
+                        <select
+                          v-model="item.type"
+                          @change="clearError(index, 'type')"
+                          class="inp"
+                          :class="{
+                            'inp-error': errors[`items[${index}].type`],
+                          }"
+                        >
                           <option value="">— Select —</option>
                           <option v-for="t in typeOptions" :key="t" :value="t">
                             {{ t }}
                           </option>
                         </select>
+                        <Message
+                          v-if="errors[`items[${index}].type`]"
+                          severity="error"
+                          size="small"
+                          variant="simple"
+                        >
+                          {{ errors[`items[${index}].type`][0].message }}
+                        </Message>
                       </div>
                     </div>
 
                     <div class="field stagger-2">
-                      <label>Specification / Purity</label>
+                      <label
+                        >Specification / Purity<span class="req">*</span></label
+                      >
                       <input
                         v-model="item.specPurity"
+                        @input="clearError(index, 'specPurity')"
                         type="text"
                         class="inp"
+                        maxlength="100"
                         placeholder="e.g. 99.999%"
+                        :class="{
+                          'inp-error': errors[`items[${index}].specPurity`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].specPurity`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].specPurity`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-3">
-                      <label>Cylinder Type</label>
+                      <label>Cylinder Type<span class="req">*</span></label>
                       <input
                         v-model="item.cylinderType"
+                        @input="clearError(index, 'cylinderType')"
                         type="text"
                         class="inp"
+                        maxlength="100"
                         placeholder="Cylinder type"
+                        :class="{
+                          'inp-error': errors[`items[${index}].cylinderType`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].cylinderType`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].cylinderType`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field-row stagger-4">
                       <div class="field">
-                        <label>Quantity</label>
+                        <label>Quantity <span class="req">*</span></label>
                         <input
                           v-model="item.quantity"
+                          @input="clearError(index, 'quantity')"
                           type="number"
                           class="inp"
+                          :class="{
+                            'inp-error': errors[`items[${index}].quantity`],
+                          }"
                           placeholder="0"
-                          min="0"
+                          min="1"
+                          step="1"
                         />
+                        <Message
+                          v-if="errors[`items[${index}].quantity`]"
+                          severity="error"
+                          size="small"
+                          variant="simple"
+                        >
+                          {{ errors[`items[${index}].quantity`][0].message }}
+                        </Message>
                       </div>
                       <div class="field">
-                        <label>UOM</label>
+                        <label>UOM <span class="req">*</span></label>
                         <input
                           v-model="item.uom"
+                          @input="clearError(index, 'uom')"
                           type="text"
                           class="inp"
+                          maxlength="20"
                           placeholder="e.g. KG, L"
+                          :class="{
+                            'inp-error': errors[`items[${index}].uom`],
+                          }"
                         />
+                        <Message
+                          v-if="errors[`items[${index}].uom`]"
+                          severity="error"
+                          size="small"
+                          variant="simple"
+                        >
+                          {{ errors[`items[${index}].uom`][0].message }}
+                        </Message>
                       </div>
                     </div>
 
                     <div class="field stagger-5">
-                      <label>Cylinder Size (L)</label>
+                      <label>Cylinder Size (L)<span class="req">*</span></label>
                       <input
                         v-model="item.cylinderSize"
+                        @input="clearError(index, 'cylinderSize')"
                         type="text"
                         class="inp"
+                        maxlength="20"
                         placeholder="Size in litres"
+                        :class="{
+                          'inp-error': errors[`items[${index}].cylinderSize`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].cylinderSize`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].cylinderSize`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-6">
-                      <label>Maker / Source</label>
+                      <label>Maker / Source<span class="req">*</span></label>
                       <input
                         v-model="item.makerSource"
+                        @input="clearError(index, 'makerSource')"
                         type="text"
                         class="inp"
+                        maxlength="150"
                         placeholder="Manufacturer or source"
+                        :class="{
+                          'inp-error': errors[`items[${index}].makerSource`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].makerSource`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].makerSource`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-7">
-                      <label>Required Type Valve</label>
+                      <label
+                        >Required Type Valve<span class="req">*</span></label
+                      >
                       <input
                         v-model="item.requiredValve"
+                        @input="clearError(index, 'requiredValve')"
                         type="text"
                         class="inp"
+                        maxlength="100"
                         placeholder="Valve type"
+                        :class="{
+                          'inp-error': errors[`items[${index}].requiredValve`],
+                        }"
                       />
+
+                      <Message
+                        v-if="errors[`items[${index}].requiredValve`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].requiredValve`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-8">
-                      <label>Purpose / Application</label>
+                      <label
+                        >Purpose / Application<span class="req">*</span></label
+                      >
                       <input
                         v-model="item.purposeApplication"
+                        @input="clearError(index, 'purposeApplication')"
                         type="text"
                         class="inp"
+                        maxlength="300"
                         placeholder="Purpose or application"
+                        :class="{
+                          'inp-error':
+                            errors[`items[${index}].purposeApplication`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].purposeApplication`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{
+                          errors[`items[${index}].purposeApplication`][0]
+                            .message
+                        }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-9">
-                      <label>Customer</label>
+                      <label>Customer<span class="req">*</span></label>
                       <input
                         v-model="item.customer"
+                        @input="clearError(index, 'customer')"
                         type="text"
                         class="inp"
+                        maxlength="150"
                         placeholder="Customer name"
+                        :class="{
+                          'inp-error': errors[`items[${index}].customer`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].customer`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].customer`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-10">
-                      <label>Address / Location</label>
+                      <label
+                        >Address / Location<span class="req">*</span></label
+                      >
                       <input
                         v-model="item.addressLocation"
+                        @input="clearError(index, 'addressLocation')"
                         type="text"
                         class="inp"
+                        maxlength="300"
                         placeholder="Delivery address"
+                        :class="{
+                          'inp-error':
+                            errors[`items[${index}].addressLocation`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].addressLocation`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{
+                          errors[`items[${index}].addressLocation`][0].message
+                        }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-11">
-                      <label>Recommend Vendor / Brand</label>
+                      <label
+                        >Recommend Vendor / Brand<span class="req"
+                          >*</span
+                        ></label
+                      >
                       <input
                         v-model="item.recommendVendor"
+                        @input="clearError(index, 'recommendVendor')"
                         type="text"
                         class="inp"
+                        maxlength="200"
                         placeholder="Preferred vendor or brand"
+                        :class="{
+                          'inp-error':
+                            errors[`items[${index}].recommendVendor`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].recommendVendor`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{
+                          errors[`items[${index}].recommendVendor`][0].message
+                        }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-12">
-                      <label>Remark</label>
+                      <label>Remark<span class="req">*</span></label>
                       <textarea
                         v-model="item.remark"
+                        @input="clearError(index, 'remark')"
                         class="inp inp-textarea"
-                        placeholder="Additional remarks..."
+                        maxlength="500"
                         rows="3"
+                        placeholder="Additional remarks..."
+                        :class="{
+                          'inp-error': errors[`items[${index}].remark`],
+                        }"
                       />
+                      <Message
+                        v-if="errors[`items[${index}].remark`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].remark`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field stagger-12">
@@ -822,19 +1758,26 @@ function closeDrawer() {
                 </span>
               </div>
               <div class="footer-actions">
-               <button
-  v-for="act in footerActions"
-  :key="act.action"
-  :class="`footer-btn footer-btn-${act.style}`"
-  :disabled="(act.action === 'add' && items.length >= 50) || isSubmitting"
-  @click="handleAction(act.action)"
->
-  <span v-if="isSubmitting && (act.action === 'send' || act.action === 'accept')">
-    <i class="pi pi-spin pi-spinner" style="font-size: 12px;" />
-    Processing…
-  </span>
-  <span v-else>{{ act.label }}</span>
-</button>
+                <button
+                  v-for="act in footerActions"
+                  :key="act.action"
+                  :class="`footer-btn footer-btn-${act.style}`"
+                  :disabled="
+                    (act.action === 'add' && items.length >= 50) || isSubmitting
+                  "
+                  @click="handleAction(act.action)"
+                >
+                  <span
+                    v-if="
+                      isSubmitting &&
+                      (act.action === 'send' || act.action === 'accept')
+                    "
+                  >
+                    <i class="pi pi-spin pi-spinner" style="font-size: 12px" />
+                    Processing…
+                  </span>
+                  <span v-else>{{ act.label }}</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1225,6 +2168,18 @@ function closeDrawer() {
 .inp::placeholder {
   color: var(--text-muted, rgba(255, 255, 255, 0.25));
 }
+
+select.inp {
+  height: 37px;       
+  padding: 0 11px;     
+  appearance: none;
+  -webkit-appearance: none;
+  
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
 select.inp option {
   background: var(--bg-base, #060c18);
   color: var(--text-primary, #fff);
@@ -1252,6 +2207,9 @@ select.inp option {
 }
 
 .inp-auto {
+    height: 37px;
+  display: flex;
+  align-items: center;
   background: rgba(255, 255, 255, 0.03);
   border: 1px dashed var(--border-subtle, rgba(255, 255, 255, 0.09));
   border-radius: 8px;
@@ -1525,5 +2483,155 @@ select.inp option {
   border: 1px solid var(--border-accent, rgba(56, 163, 245, 0.3));
   border-radius: 0 8px 8px 0;
   color: var(--accent, #38a3f5);
+}
+
+.inp-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+}
+
+.req {
+  color: #f87171;
+  margin-left: 2px;
+}
+
+:deep(.p-message.p-message-error) {
+  background: transparent;
+  border: none;
+  padding: 2px 0 0;
+  color: #f87171;
+  font-size: 11px;
+}
+
+/* แต่ละปุ่มแดง */
+.attach-btn-error {
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  color: #f87171 !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+/* แนบไฟล์แล้ว — เขียว */
+.attach-btn-done {
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-style: solid !important;
+}
+
+/* ครอบ label + ปุ่มลบ */
+.attach-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.attach-wrap .attach-btn {
+  flex: 1;
+  /* ✅ เพิ่ม padding-right เผื่อปุ่มลบ */
+  padding-right: 28px;
+  overflow: hidden;
+}
+
+.attach-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ปุ่ม ✕ */
+.attach-remove {
+  position: absolute;
+  right: 6px;
+  top: 45%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 30px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s;
+  flex-shrink: 0;
+  z-index: 1;
+}
+.attach-remove:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #fff;
+}
+
+/* Override PrimeVue Select ให้เข้า theme */
+:deep(.gl-select) {
+  width: 100%;
+}
+:deep(.gl-select .p-select) {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.09));
+  border-radius: 8px;
+  color: var(--text-primary, #fff);
+  font-size: 13px;
+}
+:deep(.gl-select.inp-error-select .p-select) {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+}
+:deep(.p-select-overlay) {
+  background: var(--bg-base, #0d1428);
+  border: 1px solid var(--border-accent, rgba(56, 163, 245, 0.3));
+  border-radius: 10px;
+}
+:deep(.p-select-filter) {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  color: var(--text-primary, #fff);
+  font-size: 12px;
+  padding: 7px 10px;
+  width: 100%;
+}
+:deep(.p-select-option:hover) {
+  background: var(--accent-dim, rgba(56, 163, 245, 0.12));
+}
+:deep(.p-select-option.p-selected) {
+  background: var(--accent-dim, rgba(56, 163, 245, 0.2));
+  color: var(--accent, #38a3f5);
+}
+
+/* GL option layout */
+.gl-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0;
+}
+.gl-code {
+  font-family: "DM Mono", monospace;
+  font-size: 11.5px;
+  color: var(--accent, #38a3f5);
+  font-weight: 600;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+.gl-desc {
+  font-size: 12.5px;
+  color: var(--text-primary, #fff);
+}
+.gl-placeholder {
+  color: var(--text-muted, rgba(255, 255, 255, 0.3));
+  font-size: 13px;
+}
+
+.field-error {
+  font-size: 11px;
+  color: #f87171;
+  margin: 3px 0 0;
+  padding: 0;
 }
 </style>

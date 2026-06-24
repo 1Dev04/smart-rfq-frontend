@@ -18,7 +18,7 @@ const urlError = params.get("error");
 const codeVerifier = sessionStorage.getItem("pkce_verifier") ?? "";
 sessionStorage.removeItem("pkce_verifier");
 window.history.replaceState({}, "", "/auth/microsoft/callback");
-const BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND;
+const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
 
 function animProg(target, ms) {
   clearInterval(progTimer);
