@@ -13,7 +13,7 @@ const drawer = useRFQDrawerStore();
 const toast = useToast();
 const isSubmitting = ref(false);
 const category = computed(() => drawer.category);
-const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
+const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
 
 const categoryTypeMap = {
   "project-revenue": "Project Revenue (I/O)",
