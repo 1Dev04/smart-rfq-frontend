@@ -1,6 +1,6 @@
 
 <script setup>
-import { apiFetch } from "../../utils/api";
+
 const props = defineProps({
   page:     { type: Number, required: true },
   pageSize: { type: Number, required: true },

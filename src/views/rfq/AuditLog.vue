@@ -6,7 +6,7 @@ import DatePicker from "primevue/datepicker";
 import Chart from "primevue/chart";
 import AuditLogTable from "../../components/audit/AuditLogTable.vue";
 import AuditLogPagination from "../../components/audit/AuditLogPagination.vue";
-
+import { apiFetch } from "../../utils/api.js";
 
 /* ── Filters ── */
 const dateRange = ref(null);

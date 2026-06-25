@@ -13,7 +13,7 @@ const drawer = useRFQDrawerStore();
 const toast = useToast();
 const isSubmitting = ref(false);
 const category = computed(() => drawer.category);
-const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
+const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
 
 const categoryTypeMap = {
   "project-revenue": "Project Revenue (I/O)",
@@ -28,8 +28,19 @@ const categoryTypeMap = {
   "fix-asset": "Fix Asset",
 };
 
+const categoryUomMap = [
+  { label: "จำนวนชิ้น (ea, pc)", value: "ea" },
+  { label: "ชุด (set)", value: "set" },
+  { label: "น้ำหนัก (kg, ton)", value: "kg" },
+  { label: "ปริมาตร (liter, m3)", value: "liter" },
+];
+
 const prefilledType = computed(() =>
   category.value ? (categoryTypeMap[category.value.id] ?? "") : "",
+);
+
+const prefilledUom = computed(() =>
+  category.value ? (categoryUomMap[category.value.id] ?? "") : "",
 );
 
 const isTypeLocked = computed(() => !!prefilledType.value);
@@ -40,6 +51,16 @@ watch(
   (val) => {
     if (val && items.value.length > 0) {
       items.value[0].type = val;
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  prefilledUom,
+  (val) => {
+    if (val && items.value.length > 0) {
+      items.value[0].uom = val;
     }
   },
   { immediate: true },
@@ -76,10 +97,6 @@ const createEmptyItem = () => ({
   model: "",
   brand: "",
   forGas: "",
-  attachDWG: null,
-  attachSpec: null,
-  attachQuotation: null,
-  attachEtc: null,
   targetPURreply: "",
   type: "",
   specPurity: "",
@@ -154,19 +171,6 @@ function removeFile(item, field) {
     fileInputRefs.value[refKey].value = "";
   }
 }
-
-const typeOptions = [
-  "Project Revenue (I/O)",
-  "LPG 5Years & Yearly Insp",
-  "Calibration Gas Detector",
-  "Project Expense (I/O)",
-  "Trading Gas Cylinder, Trading other",
-  "Trading Gas Bulk",
-  "Fix Asset Gas Cylinder",
-  "Expense",
-  "Spare parts & Equipment For Gas",
-  "Fix Asset",
-];
 
 const glCodeOptions = ref([]);
 const isLoadingGlCodes = ref(false);
@@ -606,13 +610,7 @@ const resolver = ({ values }) => {
       ];
 
     if (!item.uom?.trim())
-      errors[`items[${i}].uom`] = [{ message: "กรุณากรอก UOM" }];
-    else if (item.uom.trim().length > 20)
-      errors[`items[${i}].uom`] = [{ message: "UOM ต้องไม่เกิน 20 ตัวอักษร" }];
-    else if (!PATTERNS.uom.test(item.uom.trim()))
-      errors[`items[${i}].uom`] = [
-        { message: "UOM ใช้ได้เฉพาะภาษาอังกฤษ ตัวเลข และ /" },
-      ];
+      errors[`items[${i}].uom`] = [{ message: "กรุณาเลือก UOM" }];
 
     if (!item.cylinderSize?.trim())
       errors[`items[${i}].cylinderSize`] = [
@@ -932,7 +930,7 @@ function closeDrawer() {
                         v-model="item.glCode"
                         @update:modelValue="clearError(index, 'glCode')"
                         :options="glCodeOptions"
-                        optionLabel="description"
+                        optionLabel="code"
                         optionValue="code"
                         :placeholder="
                           isLoadingGlCodes
@@ -950,6 +948,7 @@ function closeDrawer() {
                         :pt="{
                           root: { style: 'width: 100%' },
                         }"
+                        @filter="(e) => (e.value = e.value.replace(/\D/g, ''))"
                       >
                         <!-- Custom option แสดง code + label -->
                         <template #option="{ option }">
@@ -990,7 +989,7 @@ function closeDrawer() {
                         v-model="item.sapItem"
                         @update:modelValue="clearError(index, 'sapItem')"
                         :options="sapItemOptions"
-                        optionLabel="description"
+                        optionLabel="code"
                         optionValue="code"
                         :placeholder="
                           isLoadingSapItems
@@ -1003,6 +1002,7 @@ function closeDrawer() {
                         showClear
                         class="gl-select"
                         :pt="{ root: { style: 'width: 100%' } }"
+                        @filter="(e) => (e.value = e.value.replace(/\D/g, ''))"
                       >
                         <template #option="{ option }">
                           <div class="gl-option">
@@ -1389,8 +1389,12 @@ function closeDrawer() {
                             'inp-error': errors[`items[${index}].type`],
                           }"
                         >
-                          <option value="">— Select —</option>
-                          <option v-for="t in typeOptions" :key="t" :value="t">
+                          <option value="">— Select Type —</option>
+                          <option
+                            v-for="t in categoryTypeMap"
+                            :key="t"
+                            :value="t"
+                          >
                             {{ t }}
                           </option>
                         </select>
@@ -1479,17 +1483,24 @@ function closeDrawer() {
                       </div>
                       <div class="field">
                         <label>UOM <span class="req">*</span></label>
-                        <input
+                        <select
                           v-model="item.uom"
-                          @input="clearError(index, 'uom')"
-                          type="text"
+                          @change="clearError(index, 'uom')"
                           class="inp"
-                          maxlength="20"
-                          placeholder="e.g. KG, L"
                           :class="{
                             'inp-error': errors[`items[${index}].uom`],
                           }"
-                        />
+                        >
+                          <option value="">— Select Uom —</option>
+
+                          <option
+                            v-for="u in categoryUomMap"
+                            :key="u.value"
+                            :value="u.value"
+                          >
+                            {{ u.label }}
+                          </option>
+                        </select>
                         <Message
                           v-if="errors[`items[${index}].uom`]"
                           severity="error"

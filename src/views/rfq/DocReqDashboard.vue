@@ -13,7 +13,7 @@ import { apiFetch } from "../../utils/api.js";
 const drawer = useRFQDrawerStore();
 const toast = useToast();
 const { t, locale } = useI18n();
-const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
+const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
 
 const lang = computed({
   get: () => locale.value,

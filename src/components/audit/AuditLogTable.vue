@@ -1,6 +1,6 @@
 
 <script setup>
-import { apiFetch } from "../../utils/api";
+
 const props = defineProps({
   logs: { type: Array, required: true },
   currentPage: { type: Number, required: true },

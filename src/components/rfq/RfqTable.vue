@@ -65,11 +65,11 @@ const statusMap = {
               <td class="col-list cell-mono">{{ row.itemDescription  || "-" }}</td>
               <td class="col-num cell-center">{{ row.quantity  || "-" }}</td>
               <td class="col-uom cell-center">{{ row.uom  || "-" }}</td>
-              <td>{{ STATUS_LABEL[row.status] ?? row.status }}</td>
+              <td class="col-uom cell-center">{{ STATUS_LABEL[row.status] ?? row.status }}</td>
               <td class="col-person cell-small">{{ row.requesterEmail  || "-" }}</td>
               <td class="col-person cell-small">{{ row.purchaserEmail  || "-" }}</td>
               <td class="col-date cell-small cell-muted">{{ row.createdAt  || "-" }}</td>
-              <td class="col-date cell-small cell-muted">{{ row.updated  || "-" }}</td>
+              <td class="col-date cell-small cell-muted">{{ row.updatedAt  || "-" }}</td>
               <td class="col-lt cell-center">{{ row.leadTimeDays  || "-" }}</td>
             </tr>
           </template>
