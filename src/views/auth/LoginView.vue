@@ -131,40 +131,49 @@ async function handleLogin() {
   password.value = cleanPassword;
 
   const emailErr = validateEmail(cleanEmail);
-  if (emailErr) { setError(emailErr); return; }
+  if (emailErr) {
+    setError(emailErr);
+    return;
+  }
 
   const passErr = validatePassword(cleanPassword);
-  if (passErr) { setError(passErr); return; }
+  if (passErr) {
+    setError(passErr);
+    return;
+  }
 
   loading.value = true;
   error.value = "";
-  
+
   try {
-    
-    const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
-    const payload = { email: cleanEmail + emailDomain, password: cleanPassword };
-    
+    const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
+    const payload = {
+      email: cleanEmail + emailDomain,
+      password: cleanPassword,
+    };
+
     const res = await fetch(`${BASE}/api/auth/login`, {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
+      const data = await res.json().catch(() => ({}));
       setError(data.message || currentLang.value.err_wrong);
       return;
     }
 
     const data = await res.json();
-  
+
     auth.setAuth(data.token ?? "cookie-based", data.role, {
       email: data.email,
       name: data.fullName,
     });
     router.push("/doc-request");
-
   } catch (err) {
     setError(currentLang.value.err_wrong);
   } finally {

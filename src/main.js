@@ -84,8 +84,13 @@ app.mount('#app');
 
 const loader = document.getElementById('app-loading');
 if (loader) {
-  requestAnimationFrame(() => {
-    loader.classList.add('fade-out');
-    loader.addEventListener('transitionend', () => loader.remove(), { once: true });
-  });
+  const delay = sessionStorage.getItem('app_loaded') ? 0 : 3500;
+
+  setTimeout(() => {
+    requestAnimationFrame(() => {
+      loader.classList.add('fade-out');
+      loader.addEventListener('transitionend', () => loader.remove(), { once: true });
+      sessionStorage.setItem('app_loaded', 'true');
+    });
+  }, delay);
 }

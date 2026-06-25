@@ -8,10 +8,11 @@ import RfqTable      from "../../components/rfq/RfqTable.vue";
 import RfqPagination from "../../components/rfq/RfqPagination.vue";
 import CreateDocument from './CreateDocument.vue';
 import { useI18n } from "vue-i18n";
+import { apiFetch } from "../../utils/api.js";
 const drawer = useRFQDrawerStore();
 const toast  = useToast();
 const { t, locale } = useI18n();
-const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
+const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
 
 const lang = computed({
 get: () => locale.value,
@@ -30,13 +31,7 @@ async function fetchDocRequest() {
   isLoading.value = true;
   error.value = null;
   try {
-    const res = await fetch(`${BASE}/api/doc-request`, {
-      headers: {
-        
-        Accept: "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const res = await apiFetch(`${BASE}/api/doc-request`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
   

@@ -13,7 +13,7 @@ const drawer = useRFQDrawerStore();
 const toast = useToast();
 const isSubmitting = ref(false);
 const category = computed(() => drawer.category);
-const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
+const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
 
 const categoryTypeMap = {
   "project-revenue": "Project Revenue (I/O)",
@@ -174,12 +174,7 @@ const isLoadingGlCodes = ref(false);
 async function fetchGlCodes() {
   isLoadingGlCodes.value = true;
   try {
-    const res = await fetch(`${BASE}/api/doc-request/gl-code`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const res = await apiFetch(`${BASE}/api/doc-request/gl-code`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
@@ -259,13 +254,10 @@ async function handleAction(action) {
   if (action === "reject") {
     isSubmitting.value = true;
     try {
-      const res = await apiFetch(
-        `${BASE}/api/doc-request/reject`,
-        {
-          method: "POST",
-          body: JSON.stringify({ items: items.value }),
-        },
-      );
+      const res = await apiFetch(`${BASE}/api/doc-request/reject`, {
+        method: "POST",
+        body: JSON.stringify({ items: items.value }),
+      });
 
       if (res.status === 401) {
         toast.add({
@@ -371,17 +363,14 @@ async function handleAction(action) {
           formData.append(`items[${i}][attachEtc]`, item.attachEtc);
       });
 
-      const res = await fetch(
-        `${BASE}/api/doc-request/create`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: formData,
+      const res = await fetch(`${BASE}/api/doc-request/create`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
         },
-      );
+        body: formData,
+      });
 
       if (res.status === 401) {
         toast.add({
@@ -431,18 +420,10 @@ async function handleAction(action) {
   if (action === "accept") {
     isSubmitting.value = true;
     try {
-      const res = await fetch(
-        `${BASE}/api/doc-request/accept`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ items: items.value }),
-        },
-      );
+      const res = await fetch(`${BASE}/api/doc-request/accept`, {
+        method: "POST",
+        body: JSON.stringify({ items: items.value }),
+      });
 
       if (res.status === 401) {
         toast.add({
@@ -496,17 +477,12 @@ const isLoadingSapItems = ref(false);
 async function fetchSapItems(params) {
   isLoadingSapItems.value = true;
   try {
-    const res = await fetch(`${BASE}/api/doc-request/sap-item`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const res = await apiFetch(`${BASE}/api/doc-request/sap-item`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     sapItemOptions.value = data.map((s) => ({
       code: s.code,
-      description: s.description
+      description: s.description,
     }));
   } catch (err) {
     toast.add({
@@ -2170,11 +2146,11 @@ function closeDrawer() {
 }
 
 select.inp {
-  height: 37px;       
-  padding: 0 11px;     
+  height: 37px;
+  padding: 0 11px;
   appearance: none;
   -webkit-appearance: none;
-  
+
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 30px;
@@ -2207,7 +2183,7 @@ select.inp option {
 }
 
 .inp-auto {
-    height: 37px;
+  height: 37px;
   display: flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.03);

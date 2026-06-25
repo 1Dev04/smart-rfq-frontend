@@ -62,16 +62,13 @@ const fetchLogs = async () => {
       params.append("DateTo", localISO);
     }
     if (filterEmail.value) params.append("E_User", filterEmail.value);
-    if (filterPurchaser.value)
-      params.append("E_Purchaser", filterPurchaser.value);
+    if (filterPurchaser.value) params.append("E_Purchaser", filterPurchaser.value);
     if (filterRfqNo.value) params.append("RfqNo", filterRfqNo.value);
     if (filterAction.value) params.append("Status", filterAction.value);
     params.append("Page", currentPage.value);
     params.append("PageSize", pageSize.value);
 
-    const res = await fetch(`${BASE_URL}?${params}`, {
-  headers: { 'Authorization': `Bearer ${auth.authToken}` }
-});
+    const res = await apiFetch(`${BASE_URL}?${params}`);
     const json = await res.json();
     allLogs.value = json.data;
     totalRecords.value = json.total;
@@ -80,9 +77,7 @@ const fetchLogs = async () => {
     chartParams.set("Page", 1);
     chartParams.set("PageSize", 100);
 
-    const chartRes = await fetch(`${BASE_URL}?${chartParams}`, {
-  headers: { 'Authorization': `Bearer ${auth.authToken}` }
-});
+    const chartRes = await apiFetch(`${BASE_URL}?${chartParams}`);
     const chartJson = await chartRes.json();
     chartLogs.value = chartJson.data;
 

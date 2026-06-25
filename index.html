@@ -1,13 +1,163 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/smart-rfq-icon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Smart RFQ</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
-</html> 
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/smart-rfq-icon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart RFQ</title>
+  <style>
+    #app-loading {
+      position: fixed !important;
+      inset: 0 !important;
+      background: #f0f4f8;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      z-index: 9999;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+
+    .loading-content {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 0;
+      width: 100%;
+      text-align: center;
+    }
+
+    .loading-logo {
+      width: min(900px, 48vw) !important;
+      max-width: none !important;
+      height: auto !important;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .loading-lottie {
+      width: 200px;
+      height: 200px;
+      margin-top: -40px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .loading-bottom {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 12px;
+      margin-top: 4px;
+      width: 100%;
+      animation: fadeSlideUp 0.7s ease 0.4s both;
+    }
+
+
+
+    .loading-bar-wrap {
+      width: 260px;
+      height: 3px;
+      background: #ccd8e8;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .loading-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #16367d, #38a3f5);
+      border-radius: 99px;
+      animation: loadProgress 2.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .loading-text {
+      font-size: 12px;
+      color: #6b7196;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin: 0;
+      font-family: sans-serif;
+    }
+
+    @keyframes loadProgress {
+      0% {
+        width: 0%;
+      }
+
+      40% {
+        width: 55%;
+      }
+
+      75% {
+        width: 82%;
+      }
+
+      95% {
+        width: 95%;
+      }
+
+      100% {
+        width: 100%;
+      }
+    }
+
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.95);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app-loading">
+    <div class="loading-content">
+      <img src="https://res.cloudinary.com/dxoiu2cn5/image/upload/v1780472550/image0-removebg-preview_vcjesh.png"
+        alt="Smart RFQ" class="loading-logo" />
+      <dotlottie-player class="loading-lottie"
+        src="https://lottie.host/1d1dffe4-9ac3-419e-a4a3-7daa033737aa/0hbDu2YUsK.lottie" autoplay
+        loop></dotlottie-player>
+      <div class="loading-bottom">
+        <div class="loading-bar-wrap">
+          <div class="loading-bar" id="loading-bar"></div>
+        </div>
+        <p class="loading-text">Intelligent Sourcing. Streamlined Quoting.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.js"></script>
+
+  <script>
+    if (sessionStorage.getItem('app_loaded')) {
+      document.getElementById('app-loading').style.display = 'none';
+    } else {
+      const bar = document.getElementById('loading-bar');
+      bar.addEventListener('animationend', () => {
+        const el = document.getElementById('app-loading');
+        el.classList.add('fade-out');
+        el.addEventListener('transitionend', () => {
+          el.style.display = 'none';
+          sessionStorage.setItem('app_loaded', '1');
+        }, { once: true });
+      });
+    }
+  </script>
+
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

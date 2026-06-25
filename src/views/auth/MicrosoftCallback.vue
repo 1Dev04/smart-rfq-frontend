@@ -37,7 +37,6 @@ function animProg(target, ms) {
   }, 40);
 }
 
-
 onMounted(async () => {
   if (_called) return;
   _called = true;
@@ -51,14 +50,14 @@ onMounted(async () => {
     return;
   }
 
-
-
   try {
     const res = await fetch(`${BASE}/microsoft/callback`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // ส่ง codeVerifier ไปด้วย
-      body: JSON.stringify({ code, codeVerifier }),
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     });
 
     if (res.status === 403) {
