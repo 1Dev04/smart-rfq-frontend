@@ -1,31 +1,68 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
-import { useToast } from "primevue/usetoast";          
-import { useRFQDrawerStore } from '../../stores/rfqDrawer';
-import AppLayout     from "../../layouts/AppLayout.vue";
-import RfqFilterBar  from "../../components/rfq/RfqFilterBar.vue";
-import RfqTable      from "../../components/rfq/RfqTable.vue";
+import { useToast } from "primevue/usetoast";
+import { useRFQDrawerStore } from "../../stores/rfqDrawer";
+import AppLayout from "../../layouts/AppLayout.vue";
+import RfqFilterBar from "../../components/rfq/RfqFilterBar.vue";
+import RfqTable from "../../components/rfq/RfqTable.vue";
 import RfqPagination from "../../components/rfq/RfqPagination.vue";
-import CreateDocument from './CreateDocument.vue';
+import CreateDocument from "./CreateDocument.vue";
+import Toast from 'primevue/toast';
 import { useI18n } from "vue-i18n";
 import { apiFetch } from "../../utils/api.js";
 const drawer = useRFQDrawerStore();
-const toast  = useToast();
+const toast = useToast();
 const { t, locale } = useI18n();
 const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
 
 const lang = computed({
-get: () => locale.value,
-set: (value) => {
-locale.value = value;
-localStorage.setItem("lang", value);
-document.documentElement.lang = value;
+  get: () => locale.value,
+  set: (value) => {
+    locale.value = value;
+    localStorage.setItem("lang", value);
+    document.documentElement.lang = value;
   },
 });
+
+// ── Filters ────────────────────────────────────────────
+const filters = ref({
+  rfqNo: "",
+  type: "",
+  list: "",
+  status: "",
+  contactUser: "",
+});
+const currentPage = ref(1);
+const pageSize = ref(10);
+
+const filteredRows = computed(() =>
+  allRows.value.filter((r) => {
+    const f = filters.value;
+    return (
+      (!f.rfqNo || r.rfqNo?.toLowerCase().includes(f.rfqNo.toLowerCase())) &&
+      (!f.type || r.itemType?.toLowerCase().includes(f.type.toLowerCase())) &&
+      (!f.list ||
+        r.itemDescription?.toLowerCase().includes(f.list.toLowerCase())) &&
+      (!f.status || r.status === f.status) &&
+      (!f.contactUser ||
+        r.requesterEmail?.toLowerCase().includes(f.contactUser.toLowerCase()))
+    );
+  }),
+);
+const totalPages = computed(
+  () => Math.ceil(filteredRows.value.length / pageSize.value) || 1,
+);
+const pagedRows = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredRows.value
+    .slice(start, start + pageSize.value)
+    .map((row, i) => ({ ...row, displayNo: start + i + 1 }));
+});
+
 // ── State ──────────────────────────────────────────────
-const allRows   = ref([]);
+const allRows = ref([]);
 const isLoading = ref(false);
-const error     = ref(null);
+const error = ref(null);
 // ── Fetch ──────────────────────────────────────────────
 async function fetchDocRequest() {
   isLoading.value = true;
@@ -34,45 +71,34 @@ async function fetchDocRequest() {
     const res = await apiFetch(`${BASE}/api/doc-request`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-  
+
     allRows.value = data.rows ?? data.data ?? [];
   } catch (err) {
     error.value = err.message;
-    toast.add({ severity: "error", summary: "โหลดข้อมูลไม่สำเร็จ", detail: err.message, life: 3000 });
+    toast.add({
+      severity: "error",
+      summary: "โหลดข้อมูลไม่สำเร็จ",
+      detail: err.message,
+      life: 3000,
+    });
   } finally {
     isLoading.value = false;
   }
 }
-onMounted(fetchDocRequest);
-// ── Filters ────────────────────────────────────────────
-const filters = ref({
-rfqNo: "", type: "", list: "", status: "", contactUser: "",
-});
-const currentPage = ref(1);
-const pageSize    = ref(10);
 
-const filteredRows = computed(() =>
-  allRows.value.filter((r) => {
-    const f = filters.value;
-    return (
-      (!f.rfqNo       || r.rfqNo?.toLowerCase().includes(f.rfqNo.toLowerCase())) &&
-      (!f.type        || r.itemType?.toLowerCase().includes(f.type.toLowerCase())) &&
-      (!f.list        || r.itemDescription?.toLowerCase().includes(f.list.toLowerCase())) &&
-      (!f.status      || r.status === f.status) &&
-      (!f.contactUser || r.requesterEmail?.toLowerCase().includes(f.contactUser.toLowerCase()))
-    );
-  })
+watch([filteredRows, pageSize, filters], () => {
+  currentPage.value = 1;
+}, { deep: true });
+
+watch(
+  () => drawer.showDrawer,
+  (isOpen) => { if (!isOpen) fetchDocRequest(); }
 );
-const totalPages = computed(() =>
-Math.ceil(filteredRows.value.length / pageSize.value) || 1
-);
-const pagedRows = computed(() => {
-const start = (currentPage.value - 1) * pageSize.value;
-return filteredRows.value
-    .slice(start, start + pageSize.value)
-    .map((row, i) => ({ ...row, displayNo: start + i + 1 }));
-});
-watch([filteredRows, pageSize], () => { currentPage.value = 1; });
+
+
+onMounted(fetchDocRequest);
+
+
 
 </script>
 

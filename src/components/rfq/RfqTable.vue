@@ -3,7 +3,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { computed } from "vue";
 import { supportedLocales, setLocale } from "../../i18n";
-
+import { STATUS_LABEL } from "../../utils/statusMap";
 
 const router = useRouter();
 
@@ -58,23 +58,19 @@ const statusMap = {
               <td class="col-id ">{{ row.displayNo ?? row.id }}</td>
               <td class="col-rfq">
                 <a class="rfq-link" @click.prevent="router.push(`/doc-request/${row.id}`)">
-                  {{ row.rfqNo }}
+                  {{ row.rfqNo  || "-" }} 
                 </a>
               </td>
-              <td class="col-type">{{ row.type }}</td>
-              <td class="col-list cell-mono">{{ row.list }}</td>
-              <td class="col-num cell-center">{{ row.qty }}</td>
-              <td class="col-uom cell-center">{{ row.uom }}</td>
-              <td class="col-status cell-center">
-                <span :class="['status-badge', statusMap[row.status]?.cls]">
-                  {{ row.status }}
-                </span>
-              </td>
-              <td class="col-person cell-small">{{ row.requester }}</td>
-              <td class="col-person cell-small">{{ row.purchaser }}</td>
-              <td class="col-date cell-small cell-muted">{{ row.created }}</td>
-              <td class="col-date cell-small cell-muted">{{ row.updated }}</td>
-              <td class="col-lt cell-center">{{ row.lt }}</td>
+              <td class="col-type">{{ row.itemType  || "-"  }} </td>
+              <td class="col-list cell-mono">{{ row.itemDescription  || "-" }}</td>
+              <td class="col-num cell-center">{{ row.quantity  || "-" }}</td>
+              <td class="col-uom cell-center">{{ row.uom  || "-" }}</td>
+              <td>{{ STATUS_LABEL[row.status] ?? row.status }}</td>
+              <td class="col-person cell-small">{{ row.requesterEmail  || "-" }}</td>
+              <td class="col-person cell-small">{{ row.purchaserEmail  || "-" }}</td>
+              <td class="col-date cell-small cell-muted">{{ row.createdAt  || "-" }}</td>
+              <td class="col-date cell-small cell-muted">{{ row.updated  || "-" }}</td>
+              <td class="col-lt cell-center">{{ row.leadTimeDays  || "-" }}</td>
             </tr>
           </template>
           <tr v-else>

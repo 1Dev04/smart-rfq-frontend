@@ -3,8 +3,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { computed } from "vue";
 import { supportedLocales, setLocale } from "../../i18n";
-
-
+import { STATUS_OPTIONS } from "../../utils/statusMap";
 const router = useRouter();
 
 const { t, locale } = useI18n();
@@ -16,7 +15,6 @@ const lang = computed({
     setLocale(value);
   },
 });
-
 
 const props = defineProps({
   filters: {
@@ -54,7 +52,7 @@ function openDrawer() {
 <template>
   <div class="filter-bar">
     <div class="filter-group">
-      <label class="filter-label">{{ t('doc-req-dashboard.rfq-no') }}</label>
+      <label class="filter-label">{{ t("doc-req-dashboard.rfq-no") }}</label>
       <input
         :value="filters.rfqNo"
         class="filter-input"
@@ -65,7 +63,7 @@ function openDrawer() {
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">{{ t('doc-req-dashboard.type') }}</label>
+      <label class="filter-label">{{ t("doc-req-dashboard.type") }}</label>
       <input
         :value="filters.type"
         class="filter-input w-sm"
@@ -76,7 +74,7 @@ function openDrawer() {
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">{{ t('doc-req-dashboard.list') }}</label>
+      <label class="filter-label">{{ t("doc-req-dashboard.list") }}</label>
       <input
         :value="filters.list"
         class="filter-input"
@@ -87,19 +85,20 @@ function openDrawer() {
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">{{ t('doc-req-dashboard.status') }}</label>
+      <label class="filter-label">{{ t("doc-req-dashboard.status") }}</label>
       <div class="select-wrap">
         <select
           :value="filters.status"
           class="filter-select"
           @change="update('status', $event.target.value)"
         >
-          <option value="">All</option>
-          <option>Accept</option>
-          <option>Waiting</option>
-          <option>Resent</option>
-          <option>Reject</option>
-          <option>Cancel</option>
+          <option
+            v-for="opt in STATUS_OPTIONS"
+            :key="opt.value"
+            :value="opt.value"
+          >
+            {{ opt.label }}
+          </option>
         </select>
         <svg
           class="select-arrow"
@@ -119,7 +118,9 @@ function openDrawer() {
     </div>
 
     <div class="filter-group">
-      <label class="filter-label">{{ t('doc-req-dashboard.contact-user') }}</label>
+      <label class="filter-label">{{
+        t("doc-req-dashboard.contact-user")
+      }}</label>
       <input
         :value="filters.contactUser"
         class="filter-input w-lg"
