@@ -26,8 +26,11 @@ function stepStatus(stepId) {
   const order = allSteps.map((s) => s.id);
   const cur = order.indexOf(doc.value.status);
   const idx = order.indexOf(stepId);
-  if (idx < cur) return "done";
-  if (idx === cur) return "active";
+
+  const displayCur = doc.value.status === "user_fill" ? cur + 1 : cur;
+
+  if (idx < displayCur) return "done";
+  if (idx === displayCur) return "active";
   return "pending";
 }
 
@@ -173,7 +176,6 @@ watch(
                     ><i class="pi pi-briefcase"></i>
                     {{ doc.purchaserEmail }}</span
                   >
-                
                 </div>
 
                 <!-- Items read-only -->
@@ -251,34 +253,38 @@ watch(
                       <div class="uv-field">
                         <label>Attachments</label>
                         <div class="uv-attach-list">
-                          <a
+                          vue<a
                             v-if="item.attachDwgPath"
-                            :href="BASE + item.attachDwgPath"
+                            :href="item.attachDwgPath"
                             target="_blank"
                             class="uv-attach-link"
-                            ><i class="pi pi-file"></i> DWG</a
                           >
+                            <i class="pi pi-file"></i> DWG
+                          </a>
                           <a
                             v-if="item.attachSpecPath"
-                            :href="BASE + item.attachSpecPath"
+                            :href="item.attachSpecPath"
                             target="_blank"
                             class="uv-attach-link"
-                            ><i class="pi pi-file"></i> Spec</a
                           >
+                            <i class="pi pi-file"></i> Spec
+                          </a>
                           <a
                             v-if="item.attachQuotationPath"
-                            :href="BASE + item.attachQuotationPath"
+                            :href="item.attachQuotationPath"
                             target="_blank"
                             class="uv-attach-link"
-                            ><i class="pi pi-file"></i> Quotation</a
                           >
+                            <i class="pi pi-file"></i> Quotation
+                          </a>
                           <a
                             v-if="item.attachEtcPath"
-                            :href="BASE + item.attachEtcPath"
+                            :href="item.attachEtcPath"
                             target="_blank"
                             class="uv-attach-link"
-                            ><i class="pi pi-file"></i> ETC</a
                           >
+                            <i class="pi pi-file"></i> ETC
+                          </a>
                           <span
                             v-if="
                               !item.attachDwgPath &&
@@ -288,6 +294,7 @@ watch(
                             "
                             class="uv-no-attach"
                             >ไม่มีไฟล์แนบ</span
+                          >
                           >
                         </div>
                       </div>

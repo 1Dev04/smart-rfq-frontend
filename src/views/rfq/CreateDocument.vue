@@ -315,56 +315,55 @@ async function handleAction(action) {
       const formData = new FormData();
 
       items.value.forEach((item, i) => {
-        // ── Text fields ──
         formData.append(
-          `items[${i}][targetPURreply]`,
+          `items[${i}].TargetPURreply`,
           item.targetPURreply instanceof Date
             ? item.targetPURreply.toISOString().slice(0, 10)
             : (item.targetPURreply ?? ""),
         );
-        formData.append(`items[${i}][projectName]`, item.projectName ?? "");
-        formData.append(`items[${i}][glCode]`, item.glCode ?? "");
-        formData.append(`items[${i}][sapItem]`, item.sapItem ?? "");
+        formData.append(`items[${i}].ProjectName`, item.projectName ?? "");
+        formData.append(`items[${i}].GlCode`, item.glCode ?? "");
+        formData.append(`items[${i}].SapItem`, item.sapItem ?? "");
         formData.append(
-          `items[${i}][itemDescription]`,
+          `items[${i}].ItemDescription`,
           item.itemDescription ?? "",
         );
-        formData.append(`items[${i}][specPartNo]`, item.specPartNo ?? "");
-        formData.append(`items[${i}][model]`, item.model ?? "");
-        formData.append(`items[${i}][brand]`, item.brand ?? "");
-        formData.append(`items[${i}][forGas]`, item.forGas ?? "");
-        formData.append(`items[${i}][type]`, item.type ?? "");
-        formData.append(`items[${i}][specPurity]`, item.specPurity ?? "");
-        formData.append(`items[${i}][cylinderType]`, item.cylinderType ?? "");
-        formData.append(`items[${i}][quantity]`, item.quantity ?? "");
-        formData.append(`items[${i}][uom]`, item.uom ?? "");
-        formData.append(`items[${i}][cylinderSize]`, item.cylinderSize ?? "");
-        formData.append(`items[${i}][makerSource]`, item.makerSource ?? "");
-        formData.append(`items[${i}][requiredValve]`, item.requiredValve ?? "");
+        formData.append(`items[${i}].SpecPartNo`, item.specPartNo ?? "");
+        formData.append(`items[${i}].Model`, item.model ?? "");
+        formData.append(`items[${i}].Brand`, item.brand ?? "");
+        formData.append(`items[${i}].ForGas`, item.forGas ?? "");
+        formData.append(`items[${i}].Type`, item.type ?? "");
+        formData.append(`items[${i}].SpecPurity`, item.specPurity ?? "");
+        formData.append(`items[${i}].CylinderType`, item.cylinderType ?? "");
+        formData.append(`items[${i}].Quantity`, item.quantity ?? "");
+        formData.append(`items[${i}].Uom`, item.uom ?? "");
+        formData.append(`items[${i}].CylinderSize`, item.cylinderSize ?? "");
+        formData.append(`items[${i}].MakerSource`, item.makerSource ?? "");
+        formData.append(`items[${i}].RequiredValve`, item.requiredValve ?? "");
         formData.append(
-          `items[${i}][purposeApplication]`,
+          `items[${i}].PurposeApplication`,
           item.purposeApplication ?? "",
         );
-        formData.append(`items[${i}][customer]`, item.customer ?? "");
+        formData.append(`items[${i}].Customer`, item.customer ?? "");
         formData.append(
-          `items[${i}][addressLocation]`,
+          `items[${i}].AddressLocation`,
           item.addressLocation ?? "",
         );
         formData.append(
-          `items[${i}][recommendVendor]`,
+          `items[${i}].RecommendVendor`,
           item.recommendVendor ?? "",
         );
-        formData.append(`items[${i}][remark]`, item.remark ?? "");
+        formData.append(`items[${i}].Remark`, item.remark ?? "");
 
-        // ── Files (ถ้ามี) ──
+        // Files
         if (item.attachDWG)
-          formData.append(`items[${i}][attachDWG]`, item.attachDWG);
+          formData.append(`items[${i}].AttachDWG`, item.attachDWG);
         if (item.attachSpec)
-          formData.append(`items[${i}][attachSpec]`, item.attachSpec);
+          formData.append(`items[${i}].AttachSpec`, item.attachSpec);
         if (item.attachQuotation)
-          formData.append(`items[${i}][attachQuotation]`, item.attachQuotation);
+          formData.append(`items[${i}].AttachQuotation`, item.attachQuotation);
         if (item.attachEtc)
-          formData.append(`items[${i}][attachEtc]`, item.attachEtc);
+          formData.append(`items[${i}].AttachEtc`, item.attachEtc);
       });
 
       const res = await fetch(`${BASE}/api/doc-request/create`, {
@@ -724,7 +723,15 @@ function closeDrawer() {
 <template>
   <Teleport to="body">
     <Transition name="drawer-fade">
-      <div v-if="drawer.showDrawer && drawer.drawerRole === 'user' && !drawer.docRequestId" class="drawer-overlay" @click.self="closeDrawer">
+      <div
+        v-if="
+          drawer.showDrawer &&
+          drawer.drawerRole === 'user' &&
+          !drawer.docRequestId
+        "
+        class="drawer-overlay"
+        @click.self="closeDrawer"
+      >
         <Transition name="drawer-slide" appear>
           <div class="drawer-panel" role="dialog" aria-modal="true">
             <div class="drawer-header">
