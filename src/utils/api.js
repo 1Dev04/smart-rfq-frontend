@@ -1,7 +1,7 @@
+import router from '../router/router.js';
 
-
-export function apiFetch(url, option = {}) {
-    return fetch(url, {
+export async function apiFetch(url, option = {}) {
+    const res = await fetch(url, {
         ...option,
         credentials: "include",
         headers: {
@@ -10,4 +10,11 @@ export function apiFetch(url, option = {}) {
             ...option.headers,
         },
     });
+
+    if (res.status === 401 && !option.skipAuthRedirect) {
+        router.push('/login');
+        return res;
+    }
+
+    return res;
 }

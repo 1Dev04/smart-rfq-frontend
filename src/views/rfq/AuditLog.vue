@@ -6,7 +6,7 @@ import DatePicker from "primevue/datepicker";
 import Chart from "primevue/chart";
 import AuditLogTable from "../../components/audit/AuditLogTable.vue";
 import AuditLogPagination from "../../components/audit/AuditLogPagination.vue";
-import { apiFetch } from "../../utils/api.js";
+import { apiFetch } from "../../utils/api";
 
 /* ── Filters ── */
 const dateRange = ref(null);
@@ -40,7 +40,7 @@ const allLogs = ref([]);
 const totalRecords = ref(0);
 const loading = ref(false);
 
-const BASE_URL = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}/api/AuditLog`;
+const BASE_URL = `${import.meta.env.VITE_LOCAL_BACKEND}/api/auditLog`;
 
 const chartLogs = ref([]);
 

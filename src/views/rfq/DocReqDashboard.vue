@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useRFQDrawerStore } from "../../stores/rfqDrawer";
 import AppLayout from "../../layouts/AppLayout.vue";
@@ -7,13 +7,17 @@ import RfqFilterBar from "../../components/rfq/RfqFilterBar.vue";
 import RfqTable from "../../components/rfq/RfqTable.vue";
 import RfqPagination from "../../components/rfq/RfqPagination.vue";
 import CreateDocument from "./CreateDocument.vue";
-import Toast from 'primevue/toast';
+import Toast from "primevue/toast";
 import { useI18n } from "vue-i18n";
 import { apiFetch } from "../../utils/api.js";
+import ViewDocumentPurchase from "../../views/rfq/ViewDocumentPurchase.vue";
+import ViewDocumentUser from "../../views/rfq/ViewDocumentUser.vue"; 
 const drawer = useRFQDrawerStore();
 const toast = useToast();
 const { t, locale } = useI18n();
 const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
+import { useAuthStore } from '../../stores/auth'
+const auth = useAuthStore()
 
 const lang = computed({
   get: () => locale.value,
@@ -71,7 +75,7 @@ async function fetchDocRequest() {
     const res = await apiFetch(`${BASE}/api/doc-request`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-
+  
     allRows.value = data.rows ?? data.data ?? [];
   } catch (err) {
     error.value = err.message;
@@ -86,41 +90,60 @@ async function fetchDocRequest() {
   }
 }
 
-watch([filteredRows, pageSize, filters], () => {
-  currentPage.value = 1;
-}, { deep: true });
+watch(
+  [filteredRows, pageSize, filters],
+  () => {
+    currentPage.value = 1;
+  },
+  { deep: true },
+);
 
 watch(
   () => drawer.showDrawer,
-  (isOpen) => { if (!isOpen) fetchDocRequest(); }
+  (isOpen) => {
+    if (!isOpen) fetchDocRequest();
+  },
 );
-
 
 onMounted(fetchDocRequest);
 
-
+async function openPurchaseDrawer(docRequestId) {
+  const rawRole = auth.role
+  const drawerRole = rawRole === 'purchaser' ? 'purchase' : rawRole
+  
+  
+  
+  drawer.closeDrawer()
+  await nextTick()
+  drawer.openDrawer(drawerRole, null, docRequestId)
+  
+  
+}
 
 </script>
 
 <template>
   <AppLayout
-    :title="t('doc-req-dashboard.title')"
-    role="user"
-    email="Test.dev@itg.co.th"
-  >
+  :title="t('doc-req-dashboard.title')"
+  :role="auth.role"
+  :email="auth.email"
+>
     <!-- ← เพิ่มตรงนี้ -->
     <Toast position="top-right" />
     <RfqFilterBar
       :filters="filters"
       @update:filters="filters = $event"
-      @open-drawer="drawer.openDrawer()"
+      @open-drawer="drawer.openDrawer('user', null, null)"
     />
-    <RfqTable :rows="pagedRows" />
+    <RfqTable :rows="pagedRows" @open-rfq="openPurchaseDrawer" />
     <RfqPagination
       v-model:page="currentPage"
       v-model:pageSize="pageSize"
       :total="filteredRows.length"
     />
+    <ViewDocumentUser /> 
+    <ViewDocumentPurchase />
     <CreateDocument />
+    
   </AppLayout>
 </template>

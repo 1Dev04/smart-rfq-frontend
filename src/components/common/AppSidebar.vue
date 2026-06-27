@@ -3,14 +3,16 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
 const router = useRouter();
+import { apiFetch } from "../../utils/api";
 
 const auth = useAuthStore();
+const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
 
 async function logout() {
-  await auth.logout()
-  router.push("/login")
+  await apiFetch(`${BASE}/api/auth/logout`, { method: "POST" });
+  auth.logout();
+  router.push("/login");
 }
-
 const RFQLogo =
   "https://res.cloudinary.com/dxoiu2cn5/image/upload/v1780541755/image-removebg-preview_hlrefl.png";
 

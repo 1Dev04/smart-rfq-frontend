@@ -574,7 +574,12 @@ const resolver = ({ values }) => {
         { message: "For GAS มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
       ];
 
-    if (!item.attachDWG)
+    if (
+      !item.attachDWG &&
+      !item.attachSpec &&
+      !item.attachQuotation &&
+      !item.attachEtc
+    )
       errors[`items[${i}].attachDWG`] = [
         { message: "กรุณาแนบไฟล์ DWG หรือ Specification อย่างน้อย 1 ไฟล์" },
       ];
@@ -719,11 +724,7 @@ function closeDrawer() {
 <template>
   <Teleport to="body">
     <Transition name="drawer-fade">
-      <div
-        v-if="drawer.showDrawer"
-        class="drawer-overlay"
-        @click.self="closeDrawer"
-      >
+      <div v-if="drawer.showDrawer && drawer.drawerRole === 'user' && !drawer.docRequestId" class="drawer-overlay" @click.self="closeDrawer">
         <Transition name="drawer-slide" appear>
           <div class="drawer-panel" role="dialog" aria-modal="true">
             <div class="drawer-header">
@@ -1156,7 +1157,10 @@ function closeDrawer() {
                           :class="{
                             'attach-btn-error':
                               errors[`items[${index}].attachDWG`] &&
-                              !item.attachDWG,
+                              !item.attachDWG &&
+                              !item.attachSpec &&
+                              !item.attachQuotation &&
+                              !item.attachEtc,
                             'attach-btn-done': item.attachDWG,
                           }"
                         >
@@ -2620,5 +2624,81 @@ select.inp option {
   color: #f87171;
   margin: 3px 0 0;
   padding: 0;
+}
+
+.inp-view {
+  min-height: 37px;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07));
+  border-radius: 8px;
+  color: var(--text-primary, #fff);
+  font-size: 13px;
+  padding: 8px 11px;
+}
+
+.meta-bar {
+  display: flex;
+  gap: 20px;
+  padding: 10px 0 16px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07));
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.4));
+}
+.meta-item i {
+  color: var(--accent, #38a3f5);
+}
+
+.attach-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.attach-link {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--accent-dim, rgba(56, 163, 245, 0.1));
+  border: 1px solid var(--border-accent, rgba(56, 163, 245, 0.25));
+  color: var(--accent, #38a3f5);
+  font-size: 12px;
+  text-decoration: none;
+  transition: all 0.18s;
+}
+.attach-link:hover {
+  background: var(--accent-dim, rgba(56, 163, 245, 0.2));
+}
+.no-attach {
+  font-size: 12px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.3));
+  font-style: italic;
+}
+
+.lead-time-field {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--accent-dim, rgba(56, 163, 245, 0.06));
+  border: 1px solid var(--border-accent, rgba(56, 163, 245, 0.2));
+}
+
+.loading-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 60px 0;
+  color: var(--text-muted, rgba(255, 255, 255, 0.4));
 }
 </style>

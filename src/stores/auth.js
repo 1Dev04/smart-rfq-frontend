@@ -4,13 +4,16 @@ import { ref, computed } from "vue";
 export const useAuthStore = defineStore("auth", () => {
   const authRole = ref(localStorage.getItem("rfq_auth_role") || null);
   const user = ref(JSON.parse(localStorage.getItem("rfq_auth_user") || "null"));
-  const API_BASE =
-    import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND;
+  const API_BASE = import.meta.env.VITE_LOCAL_BACKEND;
 
   const isAuthenticated = computed(() => !!user.value);
   const isAdmin = computed(() => authRole.value === "admin");
-  const isPurchaser = computed(() => authRole.value === "purchaser");
-  const role = computed(() => authRole.value || "user");
+  const isPurchase = computed(() => authRole.value === "purchase");
+  const role = computed(() => {
+    if (!authRole.value) return "user";
+    if (authRole.value === "purchaser") return "purchase";
+    return authRole.value;
+  });
 
   function setAuth(_token, newRole, userData) {
     authRole.value = newRole;
@@ -18,12 +21,16 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.setItem("rfq_auth_role", newRole);
     localStorage.setItem("rfq_auth_user", JSON.stringify(userData));
   }
+  const isLoggingOut = ref(false);
 
   async function logout() {
+    if (isLoggingOut.value) return;
+    isLoggingOut.value = true;
     if (user.value) {
       await fetch(`${API_BASE}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
+        skipAuthRedirect: true,
       }).catch(() => {});
     }
     authRole.value = null;
@@ -34,14 +41,11 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function restoreSession() {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/me`, {
-        credentials: "include",
+      const res = await apiFetch(`${API_BASE}/api/auth/me`, {
+        skipAuthRedirect: true,
       });
       if (!res.ok) {
-     
-        user.value = null;
-        authRole.value = null;
-        return false;
+        return null;
       }
       const data = await res.json();
       setAuth(null, data.role, { email: data.email, name: data.fullName });
@@ -56,7 +60,7 @@ export const useAuthStore = defineStore("auth", () => {
     user,
     isAuthenticated,
     isAdmin,
-    isPurchaser,
+    isPurchase,
     role,
     setAuth,
     logout,

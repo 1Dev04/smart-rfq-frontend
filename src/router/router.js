@@ -38,6 +38,7 @@ const routes = [
     component: () => import("../views/rfq/Theme.vue"),
     meta: { requiresAuth: true, role: "user" },
   },
+  
   {
     path: "/admin",
     name: "AdminDashboard",
