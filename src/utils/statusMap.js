@@ -1,11 +1,11 @@
 // utils/statusMap.js
 export const STATUS_LABEL = {
   user_fill:         "Draft",
-  purchase_accept:   "Purchase Accept",
+  purchase_accept:   "PUR Accept",
   waiting_quotation: "Waiting Quotation",
-  purchase_compare:  "Purchase Compare",
+  purchase_compare:  "PUR Compare",
   user_confirm:      "User Confirm",
-  purchase_confirm:  "Purchase Confirm",
+  purchase_confirm:  "PUR Confirm",
   finish:            "Finish",
   reject:            "Reject",
   cancel:            "Cancel",

@@ -12,6 +12,7 @@ import { useI18n } from "vue-i18n";
 import { apiFetch } from "../../utils/api.js";
 import ViewDocumentPurchase from "../../views/rfq/ViewDocumentPurchase.vue";
 import ViewDocumentUser from "../../views/rfq/ViewDocumentUser.vue"; 
+import WaitSumDocumentPurchase from "./WaitSumDocumentPurchase.vue";
 const drawer = useRFQDrawerStore();
 const toast = useToast();
 const { t, locale } = useI18n();
@@ -108,16 +109,26 @@ watch(
 onMounted(fetchDocRequest);
 
 async function openPurchaseDrawer(docRequestId) {
-  const rawRole = auth.role
-  const drawerRole = rawRole === 'purchaser' ? 'purchase' : rawRole
-  
-  
-  
+  const row = allRows.value.find(r => r.docRequestId === docRequestId)
+  const status = row?.status
+
+  let drawerRole
+  if (auth.role === 'user') {
+    drawerRole = 'user'
+  } else {
+    // purchaser
+    const statusToDrawer = {
+      user_fill:         'purchase',
+      purchase_accept:   'waiting',  
+      waiting_quotation: 'waiting',
+      purchase_compare:  'waiting',
+    }
+    drawerRole = statusToDrawer[status] ?? 'purchase'
+  }
+
   drawer.closeDrawer()
   await nextTick()
   drawer.openDrawer(drawerRole, null, docRequestId)
-  
-  
 }
 
 </script>
@@ -143,6 +154,7 @@ async function openPurchaseDrawer(docRequestId) {
     />
     <ViewDocumentUser /> 
     <ViewDocumentPurchase />
+    <WaitSumDocumentPurchase />
     <CreateDocument />
     
   </AppLayout>

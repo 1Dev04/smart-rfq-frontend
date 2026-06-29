@@ -26,11 +26,10 @@ function stepStatus(stepId) {
   const order = allSteps.map((s) => s.id);
   const cur = order.indexOf(doc.value.status);
   const idx = order.indexOf(stepId);
-
-  const displayCur = doc.value.status === "user_fill" ? cur + 1 : cur;
-
-  if (idx < displayCur) return "done";
-  if (idx === displayCur) return "active";
+  
+  if (cur === -1) return "pending";
+  if (idx <= cur) return "done";       
+  if (idx === cur + 1) return "active"; 
   return "pending";
 }
 
@@ -253,7 +252,7 @@ watch(
                       <div class="uv-field">
                         <label>Attachments</label>
                         <div class="uv-attach-list">
-                          vue<a
+                          <a
                             v-if="item.attachDwgPath"
                             :href="item.attachDwgPath"
                             target="_blank"
@@ -295,7 +294,7 @@ watch(
                             class="uv-no-attach"
                             >ไม่มีไฟล์แนบ</span
                           >
-                          >
+                          
                         </div>
                       </div>
                     </div>

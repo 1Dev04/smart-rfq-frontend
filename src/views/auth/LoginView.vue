@@ -825,6 +825,7 @@ async function handleLogin() {
   outline: none;
   color: var(--text-primary, #08174a);
   font-family: "DM Sans", sans-serif;
+  
   font-size: 14px;
   padding: 12px 10px;
   min-width: 0;
@@ -1109,7 +1110,7 @@ async function handleLogin() {
   color: var(--accent);
 }
 [data-theme="light"] .custom-check {
-  background: #3d7aff;
+  background: var(--accent, #3d7aff);
   border-color: #d4d8ea;
 }
 [data-theme="light"] .headline-title {

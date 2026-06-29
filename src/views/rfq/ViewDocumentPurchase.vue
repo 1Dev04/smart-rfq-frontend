@@ -8,19 +8,25 @@ const drawer = useRFQDrawerStore();
 const toast = useToast();
 const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
 
+// ── Vendor Email Modal ──────────────────────────────────
+const showEmailModal = ref(false)
+const vendorEmails   = ref([''])
+const isSending      = ref(false)
+
 const isLoading = ref(false);
 const isSubmitting = ref(false);
 const doc = ref(null);
 const leadTimes = ref({});
 
+
 const allSteps = [
-  { id: "user_fill", label: "User Fill\nData (Draft)" },
-  { id: "purchase_accept", label: "Purchase\nAccept" },
-  { id: "waiting_quote", label: "Waiting\nQuotation" },
-  { id: "purchase_compare", label: "Purchase\nCompare" },
-  { id: "user_confirm", label: "User\nConfirm" },
-  { id: "purchase_confirm", label: "Purchase\nConfirm" },
-  { id: "finish", label: "Finish" },
+  { id: "user_fill",         label: "User Fill\nData (Draft)" },
+  { id: "purchase_accept",   label: "Purchase\nAccept" },
+  { id: "waiting_quotation", label: "Waiting\nQuotation" },  
+  { id: "purchase_compare",  label: "Purchase\nCompare" },
+  { id: "user_confirm",      label: "User\nConfirm" },
+  { id: "purchase_confirm",  label: "Purchase\nConfirm" },
+  { id: "finish",            label: "Finish" },
 ];
 
 function statusLabel(statusId) {
@@ -35,11 +41,39 @@ function stepStatus(stepId) {
   const order = allSteps.map((s) => s.id);
   const cur = order.indexOf(doc.value.status);
   const idx = order.indexOf(stepId);
-  const displayCur = doc.value.status === "user_fill" ? cur + 1 : cur;
-
-  if (idx < displayCur) return "done";
-  if (idx === displayCur) return "active";
+  
+  if (cur === -1) return "pending";
+  if (idx <= cur) return "done";       
+  if (idx === cur + 1) return "active"; 
   return "pending";
+}
+
+function addEmailField() { vendorEmails.value.push('')}
+function removeEmail(i) { vendorEmails.value.splice(i, 1)}
+
+async function openPurchaseDrawer(docRequestId) {
+  // ดึง status จาก row ที่คลิก
+  const row = allRows.value.find(r => r.docRequestId === docRequestId)
+  const status = row?.status
+
+  const roleMap = {
+    purchase_accept:   'purchase',
+    waiting_quotation: 'waiting',
+    // เพิ่ม state ต่อไปได้
+  }
+  const drawerRole = roleMap[status] ?? (auth.role === 'purchaser' ? 'purchase' : auth.role)
+
+  drawer.closeDrawer()
+  await nextTick()
+  drawer.openDrawer(drawerRole, null, docRequestId)
+}
+
+// Helper
+function parseThaiDate(dateStr) {
+  if (!dateStr) return null;
+
+  const [day, month, year] = dateStr.split("/");
+  return new Date(`20${year}-${month}-${day}`);
 }
 
 async function fetchDetail() {
@@ -480,15 +514,17 @@ async function handleReject() {
                           Purchase ต้องเริ่มดำเนินการภายใน:
                           <strong>{{
                             item.targetPURreply
-                              ? new Date(
-                                  new Date(
-                                    item.targetPURreply
-                                      .split("/")
-                                      .reverse()
-                                      .join("-"),
-                                  ) -
-                                    leadTimes[item.id] * 86400000,
-                                ).toLocaleDateString("th-TH")
+                              ? (() => {
+                                  const target = parseThaiDate(
+                                    item.targetPURreply,
+                                  );
+                                  if (!target) return "-";
+                                  const start = new Date(
+                                    target.getTime() -
+                                      leadTimes[item.id] * 86400000,
+                                  );
+                                  return start.toLocaleDateString("th-TH");
+                                })()
                               : "-"
                           }}</strong>
                         </span>

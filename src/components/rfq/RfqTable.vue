@@ -18,8 +18,6 @@ const lang = computed({
   },
 });
 
-
-
 const props = defineProps({ rows: { type: Array, required: true } });
 
 const visibleRows = computed(() =>
@@ -28,12 +26,8 @@ const visibleRows = computed(() =>
     .map((row, index) => ({ ...row, displayNo: index + 1 }))
 );
 
-const statusMap = {
-  Accept: { cls: "badge-accept" },
-  Waiting: { cls: "badge-waiting" },
-  Resent: { cls: "badge-resent" },
-  Cancel: { cls: "badge-cancel" },
-};
+
+
 </script>
 
 <template>

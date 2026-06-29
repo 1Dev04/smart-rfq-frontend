@@ -11,7 +11,7 @@ export const useAuthStore = defineStore("auth", () => {
   const isPurchase = computed(() => authRole.value === "purchase");
   const role = computed(() => {
     if (!authRole.value) return "user";
-    if (authRole.value === "purchaser") return "purchase";
+    if (authRole.value === "purchase") return "purchase";
     return authRole.value;
   });
 
