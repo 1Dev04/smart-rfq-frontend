@@ -7,6 +7,7 @@ import Chart from "primevue/chart";
 import AuditLogTable from "../../components/audit/AuditLogTable.vue";
 import AuditLogPagination from "../../components/audit/AuditLogPagination.vue";
 import { apiFetch } from "../../utils/api";
+import statusMap from "../../utils/statusMap";
 
 /* ── Filters ── */
 const dateRange = ref(null);
@@ -14,7 +15,8 @@ const filterEmail = ref("");
 const filterPurchaser = ref("");
 const filterRfqNo = ref("");
 const filterAction = ref("");
-const actionOptions = ["Waiting", "Accept", "Resent", "Cancel"];
+
+const actionOptions = statusMap.STATUS_OPTIONS.filter((o) => o.value);
 
 const rangeStart = computed(() => dateRange.value?.[0] ?? null);
 const rangeEnd = computed(() => dateRange.value?.[1] ?? null);
@@ -306,8 +308,8 @@ onMounted(fetchLogs);
           <label class="filter-label">Status</label>
           <select v-model="filterAction" class="filter-inp">
             <option value="">— All —</option>
-            <option v-for="a in actionOptions" :key="a" :value="a">
-              {{ a }}
+            <option v-for="opt in actionOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
             </option>
           </select>
         </div>
