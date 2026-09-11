@@ -18,7 +18,7 @@
       "purchaser": "PURCHASER",
       "created": "CREATED",
       "updated": "UPDATED",
-      "l&t": "L/T (DAYS)"
+      "l&t": "Duration Day"
     },
     "pagination": {
       "showing": "Showing",
@@ -49,10 +49,10 @@
   "category-card": {
     "click-select": "click to select"
   },
-  "category-modal": {
+    "category-modal": {
     "selected-category": "Selected Category",
     "create-document": "Create Document",
-    "cancel": "Cancle"
+    "cancel": "Cancel"
   },
     "category-name": {
       "name-project-revenue": "Project Revenue (I/O)",

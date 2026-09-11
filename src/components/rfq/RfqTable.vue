@@ -3,7 +3,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { computed } from "vue";
 import { supportedLocales, setLocale } from "../../i18n";
-import { STATUS_LABEL } from "../../utils/statusMap";
+import statusMap from "../../utils/statusMap";
 
 const router = useRouter();
 
@@ -18,16 +18,22 @@ const lang = computed({
   },
 });
 
-const props = defineProps({ rows: { type: Array, required: true } });
+const props = defineProps({
+  rows: { type: Array, required: true },
+  currentPage: { type: Number, required: true },
+  pageSize: { type: Number, required: true },
+});
 
-const visibleRows = computed(() =>
-  props.rows
-    .filter(row => row.isFirstItemOfRfq)
-    .map((row, index) => ({ ...row, displayNo: index + 1 }))
-);
+const visibleRows = computed(() => {
+  const offset = (props.currentPage - 1) * props.pageSize;
+  return props.rows
+    .filter((row) => row.isFirstItemOfRfq)
+    .map((row, index) => ({ ...row, displayNo: offset + index + 1 }));
+});
 
-
-
+function statusBadgeClass(status) {
+  return statusMap.STATUS_BADGE_CLASS[status] ?? "badge-draft";
+}
 </script>
 
 <template>
@@ -67,18 +73,33 @@ const visibleRows = computed(() =>
         <tbody>
           <template v-if="rows.length">
             <tr
-             v-for="row in visibleRows" :key="row.docRequestId" class="data-row"
+              v-for="row in visibleRows"
+              :key="row.docRequestId"
+              class="data-row"
               v-show="row.isFirstItemOfRfq"
             >
               <td class="col-id">{{ row.displayNo }}</td>
               <td class="col-rfq">
-                <div class="display:flex; align-items:center; gap:6px;">
+                <div class="rfq-cell">
                   <a
                     v-if="row.docRequestId"
                     class="rfq-link"
                     @click.prevent="$emit('open-rfq', row.docRequestId)"
                   >
-                    {{ row.rfqNo || "-" }}
+                    <svg
+                      class="rfq-link-icon"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
+                    <span class="rfq-link-text">{{ row.rfqNo || "-" }}</span>
                   </a>
                   <span v-else>{{ row.rfqNo || "-" }}</span>
                   <span
@@ -96,7 +117,12 @@ const visibleRows = computed(() =>
               <td class="col-num cell-center">{{ row.quantity || "-" }}</td>
               <td class="col-uom cell-center">{{ row.uom || "-" }}</td>
               <td class="col-uom cell-center">
-                {{ STATUS_LABEL[row.status] ?? row.status }}
+                <span
+                  class="status-badge"
+                  :class="statusBadgeClass(row.status)"
+                >
+                  {{ statusMap.STATUS_LABEL[row.status] ?? row.status }}
+                </span>
               </td>
               <td class="col-person cell-small">
                 {{ row.requesterEmail || "-" }}
@@ -279,17 +305,42 @@ td {
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     0 4px 10px rgba(0, 0, 0, 0.18);
 }
-.badge-accept {
+.badge-draft {
+  background: var(--draft-bg, rgba(148, 163, 184, 0.16));
+  color: var(--, #cbd5e1);
+  border: 1px solid var(--draft-border, rgba(148, 163, 184, 0.35));
+}
+.badge-purchase-accept {
   background: var(--accept-bg, rgba(16, 185, 129, 0.22));
   color: var(--accept, #6ee7b7);
   border: 1px solid var(--accept-border, rgba(52, 211, 153, 0.45));
 }
-.badge-waiting {
+.badge-waiting-quotation {
   background: var(--waiting-bg, rgba(245, 158, 11, 0.22));
   color: var(--waiting, #fde68a);
   border: 1px solid var(--waiting-border, rgba(251, 191, 36, 0.45));
 }
-.badge-resent {
+.badge-purchase-compare {
+  background: var(--compare-bg, rgba(140, 34, 238, 0.2));
+  color: var(--compare, #5e1fa1);
+  border: 1px solid var(--compare-border, rgba(160, 69, 251, 0.4));
+}
+.badge-user-confirm {
+  background: var(--confirm-bg, rgba(59, 130, 246, 0.2));
+  color: var(--confirm, #3187ea);
+  border: 1px solid var(--confirm-border, rgba(96, 165, 250, 0.4));
+}
+.badge-purchase-confirm {
+  background: var(--pconfirm-bg, rgba(20, 184, 166, 0.2));
+  color: var(--pconfirm, #5eead4);
+  border: 1px solid var(--pconfirm-border, rgba(45, 212, 191, 0.4));
+}
+.badge-finish {
+  background: var(--finish-bg, rgba(34, 197, 94, 0.24));
+  color: var(--finish, #049439);
+  border: 1px solid var(--finish-border, rgba(74, 222, 128, 0.45));
+}
+.badge-reject {
   background: var(--resent-bg, rgba(239, 68, 68, 0.22));
   color: var(--resent, #fca5a5);
   border: 1px solid var(--resent-border, rgba(248, 113, 113, 0.45));
@@ -298,6 +349,27 @@ td {
   background: var(--cancel-bg, rgba(148, 163, 184, 0.16));
   color: var(--cancel, #e2e8f0);
   border: 1px solid var(--cancel-border, rgba(148, 163, 184, 0.35));
+}
+
+.badge-purchase-compare {
+  background: var(--compare-bg, rgba(140, 34, 238, 0.2));
+  color: var(--compare, #5e1fa1);
+  border: 1px solid var(--compare-border, rgba(160, 69, 251, 0.4));
+}
+.badge-user-confirm {
+  background: var(--confirm-bg, rgba(59, 130, 246, 0.2));
+  color: var(--confirm, #3187ea);
+  border: 1px solid var(--confirm-border, rgba(96, 165, 250, 0.4));
+}
+.badge-cost-saving {
+  background: var(--saving-bg, rgba(234, 179, 8, 0.2));
+  color: var(--saving, #9f7906);
+  border: 1px solid var(--saving-border, rgba(250, 204, 21, 0.4));
+}
+.badge-purchase-confirm {
+  background: var(--pconfirm-bg, rgba(20, 184, 166, 0.2));
+  color: var(--pconfirm, #208872);
+  border: 1px solid var(--pconfirm-border, rgba(45, 212, 191, 0.4));
 }
 
 .empty-cell {
@@ -327,6 +399,6 @@ td {
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
-  margin-left: 10px;
+  margin-left: 4px;
 }
 </style>

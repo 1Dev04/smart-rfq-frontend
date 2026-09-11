@@ -40,9 +40,38 @@ const allLogs = ref([]);
 const totalRecords = ref(0);
 const loading = ref(false);
 
-const BASE_URL = `${import.meta.env.VITE_LOCAL_BACKEND}/api/auditLog`;
+const BASE_URL = `${import.meta.env.VITE_API_URL}/api/auditLog`;
 
 const chartLogs = ref([]);
+
+/* ── Error Toast ── */
+const errorToast = ref(null); 
+let errorToastTimer = null;
+
+function showErrorToast(message) {
+  errorToast.value = { message };
+  if (errorToastTimer) clearTimeout(errorToastTimer);
+  errorToastTimer = setTimeout(() => {
+    errorToast.value = null;
+  }, 6000);
+}
+
+function dismissErrorToast() {
+  if (errorToastTimer) clearTimeout(errorToastTimer);
+  errorToast.value = null;
+}
+
+async function extractErrorMessage(res, fallback) {
+  try {
+    const body = await res.clone().json();
+    if (body?.errorId) {
+      return `${body.message || fallback} (Error ID: ${body.errorId})`;
+    }
+    return body?.message || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 const fetchLogs = async () => {
   loading.value = true;
@@ -68,22 +97,33 @@ const fetchLogs = async () => {
     params.append("Page", currentPage.value);
     params.append("PageSize", pageSize.value);
 
-    const res = await apiFetch(`${BASE_URL}?${params}`);
+    const [res, chartRes] = await Promise.all([
+      apiFetch(`${BASE_URL}?${params}`),
+      apiFetch(`${BASE_URL}/summary?${params}`),
+    ]);
+
+    if (!res.ok) {
+      const msg = await extractErrorMessage(res, "ไม่สามารถโหลดข้อมูล Audit Log ได้");
+      showErrorToast(msg);
+      return;
+    }
     const json = await res.json();
     allLogs.value = json.data;
     totalRecords.value = json.total;
 
-    const chartParams = new URLSearchParams(params);
-    chartParams.set("Page", 1);
-    chartParams.set("PageSize", 100);
-
-    const chartRes = await apiFetch(`${BASE_URL}?${chartParams}`);
+    if (!chartRes.ok) {
+      const msg = await extractErrorMessage(chartRes, "ไม่สามารถโหลดข้อมูลกราฟได้");
+      showErrorToast(msg);
+      return;
+    }
+    // chartJson is [{ date: 'YYYY-MM-DD', count: n }, ...]
     const chartJson = await chartRes.json();
-    chartLogs.value = chartJson.data;
+    chartLogs.value = chartJson;
 
     buildChart();
   } catch (e) {
     console.error("Fetch error:", e);
+    showErrorToast("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง");
   } finally {
     loading.value = false;
   }
@@ -120,16 +160,11 @@ const formatDateOnly = (value) => {
 };
 
 const buildChart = () => {
-  const dateMap = {};
-  chartLogs.value.forEach((log) => {
-    if (!log.dateTime) return;
-    const label = formatDateOnly(log.dateTime);
-    if (!label) return;
-    dateMap[label] = (dateMap[label] || 0) + 1;
-  });
-
-  const labels = Object.keys(dateMap).sort();
-  const values = labels.map((d) => dateMap[d]);
+  // chartLogs now contains aggregated
+  const labels = chartLogs.value.map((r) => formatDateOnly(r.date)).sort();
+  const values = chartLogs.value
+    .map((r) => r.count)
+    .filter((_, i) => i >= 0);
 
   const doc = getComputedStyle(document.documentElement);
   const accent = doc.getPropertyValue("--accent").trim() || "#38a3f5";
@@ -194,6 +229,33 @@ onMounted(fetchLogs);
 <template>
   <AppLayout title="Audit Log" role="user" email="Test.dev@itg.co.th">
     <div class="audit-wrap">
+      <!-- Error Toast -->
+      <Transition name="toast-fade">
+        <div v-if="errorToast" class="error-toast" role="alert">
+          <svg
+            class="error-toast-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="13" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span class="error-toast-msg">{{ errorToast.message }}</span>
+          <button class="error-toast-close" @click="dismissErrorToast" aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </Transition>
+
       <!-- Stat pill -->
       <div class="stat-pill">
         <span class="stat-num">{{ totalRecords }}</span>
@@ -312,6 +374,64 @@ onMounted(fetchLogs);
   padding: 4px 0;
   font-family: "DM Sans", sans-serif;
 }
+
+/* ── Error Toast ── */
+.error-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 380px;
+  background: rgba(30, 10, 10, 0.92);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(239, 68, 68, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  backdrop-filter: blur(6px);
+}
+.error-toast-icon {
+  flex-shrink: 0;
+  color: #f87171;
+  margin-top: 1px;
+}
+.error-toast-msg {
+  flex: 1;
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #fecaca;
+}
+.error-toast-close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: rgba(248, 113, 113, 0.6);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+.error-toast-close:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+}
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 .stat-pill {
   display: flex;
   align-items: center;

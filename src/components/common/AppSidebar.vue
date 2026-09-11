@@ -6,12 +6,13 @@ const router = useRouter();
 import { apiFetch } from "../../utils/api";
 
 const auth = useAuthStore();
-const BASE = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_BACKEND}`;
+const BASE = `${import.meta.env.VITE_API_URL}`;
 
 async function logout() {
   await apiFetch(`${BASE}/api/auth/logout`, { method: "POST" });
   auth.logout();
   router.push("/login");
+  window.location.reload();
 }
 const RFQLogo =
   "https://res.cloudinary.com/dxoiu2cn5/image/upload/v1780541755/image-removebg-preview_hlrefl.png";
@@ -28,14 +29,14 @@ const navItems = [
            <line x1="16" y1="17" x2="8" y2="17"/>
            <polyline points="10 9 9 9 8 9"/>`,
   },
-  {
-    to: "/help-category",
-    label: "Help Category",
-    icon: `<rect x="3" y="3" width="7" height="7"/>
-           <rect x="14" y="3" width="7" height="7"/>
-           <rect x="14" y="14" width="7" height="7"/>
-           <rect x="3" y="14" width="7" height="7"/>`,
-  },
+  // {
+  //   to: "/help-category",
+  //   label: "Help Category",
+  //   icon: `<rect x="3" y="3" width="7" height="7"/>
+  //          <rect x="14" y="3" width="7" height="7"/>
+  //          <rect x="14" y="14" width="7" height="7"/>
+  //          <rect x="3" y="14" width="7" height="7"/>`,
+  // },
   {
     to: "/audit-log",
     label: "Audit Log",
@@ -55,6 +56,27 @@ const navItems = [
     <circle cx="17.5" cy="11.5" r="1.5"/>
   `,
   },
+//   {
+//     to: "/how-to-use",
+//     label: "How To Use",
+//     icon: `
+// <svg
+//   xmlns="http://www.w3.org/2000/svg"
+//   width="22"
+//   height="22"
+//   viewBox="0 0 24 24"
+//   fill="none"
+//   stroke="currentColor"
+//   stroke-width="2"
+//   stroke-linecap="round"
+//   stroke-linejoin="round"
+// >
+//   <circle cx="12" cy="12" r="10"/>
+//   <path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"/>
+//   <line x1="12" y1="17" x2="12.01" y2="17"/>
+// </svg>
+// `,
+//   }
 ];
 </script>
 

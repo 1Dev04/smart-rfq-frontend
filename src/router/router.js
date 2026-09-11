@@ -38,6 +38,12 @@ const routes = [
     component: () => import("../views/rfq/Theme.vue"),
     meta: { requiresAuth: true, role: "user" },
   },
+  {
+    path: "/how-to-use",
+    name: "How To Use",
+    component: () => import("../views/rfq/HowToUse.vue"),
+    meta: { requiresAuth: true, role: "user" },
+  },
   
   {
     path: "/admin",
@@ -80,7 +86,6 @@ router.beforeEach(async (to, _from, next) => {
 
   if (to.meta.requiresAuth && to.meta.role) {
     const role = auth.authRole
-    // ✅ purchase และ user เข้าได้ทุก route ที่ไม่ใช่ admin
     if (role !== "admin" && to.meta.role === "admin") {
       return next({ name: "Doc Request" })
     }

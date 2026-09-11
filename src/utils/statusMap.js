@@ -1,25 +1,41 @@
-// utils/statusMap.js
-export const STATUS_LABEL = {
-  user_fill:         "Draft",
-  purchase_accept:   "PUR Accept",
-  waiting_quotation: "Waiting Quotation",
-  purchase_compare:  "PUR Compare",
-  user_confirm:      "User Confirm",
-  purchase_confirm:  "PUR Confirm",
-  finish:            "Finish",
-  reject:            "Reject",
-  cancel:            "Cancel",
+const STATUS_LABEL = {
+  user_draft: "Draft",
+  user_pending: "Pending",
+  waiting_quotation: "Waiting Quo.",
+  purchase_compare: "PUR Comp.",
+  user_confirm: "User Confirm",
+  cost_saving: "Cost Saving",
+  purchase_confirm: "PUR Confirm",
+  finish: "Finish",
+  reject: "Reject",
+  cancel: "Cancel",
 };
 
-export const STATUS_OPTIONS = [
-  { label: "All",               value: "" },
-  { label: "Draft",             value: "user_fill" },
-  { label: "Purchase Accept",   value: "purchase_accept" },
+const STATUS_BADGE_CLASS = {
+  user_draft: "badge-draft",
+  user_pending: "badge-pending",
+  waiting_quotation: "badge-waiting-quotation",
+  purchase_compare: "badge-purchase-compare",
+  user_confirm: "badge-user-confirm",
+  cost_saving: "badge-cost-saving",
+  purchase_confirm: "badge-purchase-confirm",
+  finish: "badge-finish",
+  reject: "badge-reject",
+  cancel: "badge-cancel",
+};
+
+const STATUS_OPTIONS = [
+  { label: "All", value: "" },
+  { label: "Draft", value: "user_draft" },
+  { label: "Pending", value: "user_pending" },
   { label: "Waiting Quotation", value: "waiting_quotation" },
-  { label: "Purchase Compare",  value: "purchase_compare" },
-  { label: "User Confirm",      value: "user_confirm" },
-  { label: "Purchase Confirm",  value: "purchase_confirm" },
-  { label: "Finish",            value: "finish" },
-  { label: "Reject",            value: "reject" },
-  { label: "Cancel",            value: "cancel" },
+  { label: "Purchase Compare", value: "purchase_compare" },
+  { label: "User Confirm", value: "user_confirm" },
+  { label: "Cost Saving", value: "cost_saving"},
+  { label: "Purchase Confirm", value: "purchase_confirm" },
+  { label: "Finish", value: "finish" },
+  { label: "Reject", value: "reject" },
+  { label: "Cancel", value: "cancel" },
 ];
+
+export default { STATUS_LABEL, STATUS_BADGE_CLASS, STATUS_OPTIONS };

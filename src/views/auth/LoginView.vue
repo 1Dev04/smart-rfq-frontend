@@ -146,7 +146,7 @@ async function handleLogin() {
   error.value = "";
 
   try {
-   const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
+   const BASE = `${import.meta.env.VITE_API_URL}`;
     const payload = {
       email: cleanEmail + emailDomain,
       password: cleanPassword,
@@ -254,11 +254,11 @@ async function handleLogin() {
 
     <!-- ── Card ── -->
     <div class="card-wrap">
-      <!-- Animated ring border -->
+      
       <div class="ring-border" aria-hidden="true" />
 
       <div class="login-card">
-        <!-- Logo -->
+     
         <div class="logo-wrap">
           <img :src="LoginLogo" alt="Smart RFQ" class="logo-img" />
         </div>

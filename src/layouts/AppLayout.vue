@@ -22,24 +22,13 @@ defineProps({
 
     
     <div class="shell">
-
-    
       <AppSidebar />
-
-      
       <div class="main-col">
-
-       
-        <AppTopbar :title="title" :role="role" :email="email" />
-
-        
+        <AppTopbar :title="title" :role="role" :email="email" />    
         <main class="page-content">
           <slot />
         </main>
-
-       
         <AppFooter />
-
       </div>
     </div>
 

@@ -3,7 +3,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { computed } from "vue";
 import { supportedLocales, setLocale } from "../../i18n";
-import { STATUS_OPTIONS } from "../../utils/statusMap";
+import statusMap from "../../utils/statusMap";
 const router = useRouter();
 
 const { t, locale } = useI18n();
@@ -24,7 +24,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:filters", "search", "clear", "open-drawer"]);
-
 function update(key, value) {
   emit("update:filters", { ...props.filters, [key]: value });
 }
@@ -36,7 +35,7 @@ function goSearch() {
 function clearFilters() {
   emit("update:filters", {
     rfqNo: "",
-    type: "",
+    itemType: "",
     list: "",
     status: "",
     contactUser: "",
@@ -65,10 +64,10 @@ function openDrawer() {
     <div class="filter-group">
       <label class="filter-label">{{ t("doc-req-dashboard.type") }}</label>
       <input
-        :value="filters.type"
+        :value="filters.itemType"
         class="filter-input w-sm"
         placeholder="LPG"
-        @input="update('type', $event.target.value)"
+        @input="update('itemType', $event.target.value)"
         @keyup.enter="goSearch"
       />
     </div>
@@ -93,7 +92,7 @@ function openDrawer() {
           @change="update('status', $event.target.value)"
         >
           <option
-            v-for="opt in STATUS_OPTIONS"
+            v-for="opt in statusMap.STATUS_OPTIONS"
             :key="opt.value"
             :value="opt.value"
           >

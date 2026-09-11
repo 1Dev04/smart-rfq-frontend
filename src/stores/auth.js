@@ -4,7 +4,7 @@ import { ref, computed } from "vue";
 export const useAuthStore = defineStore("auth", () => {
   const authRole = ref(localStorage.getItem("rfq_auth_role") || null);
   const user = ref(JSON.parse(localStorage.getItem("rfq_auth_user") || "null"));
-  const API_BASE = import.meta.env.VITE_LOCAL_BACKEND;
+  const API_BASE = import.meta.env.VITE_API_URL;
 
   const isAuthenticated = computed(() => !!user.value);
   const isAdmin = computed(() => authRole.value === "admin");

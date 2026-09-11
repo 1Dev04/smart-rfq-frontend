@@ -1,5 +1,5 @@
-
 <script setup>
+import statusMap from '../../utils/statusMap.js'
 
 const props = defineProps({
   logs: { type: Array, required: true },
@@ -7,12 +7,7 @@ const props = defineProps({
   pageSize: { type: Number, required: true },
 })
 
-const actionColor = (action) => ({
-  Accept: 'badge-accept',
-  Waiting: 'badge-waiting',
-  Resent: 'badge-resent',
-  Cancel: 'badge-cancel',
-}[action] ?? '')
+const statusBadge = (status) => statusMap.STATUS_BADGE_CLASS[status] ?? ''
 
 const formatDateTime = (value) => {
   if (!value) return '-'
@@ -51,7 +46,7 @@ const formatDateTime = (value) => {
           <td class="td-no">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
           <td class="td-rfq">{{ log.rfqNo }}</td>
           <td>
-            <span :class="['action-badge', actionColor(log.status)]">{{ log.status }}</span>
+            <span :class="['action-badge', statusBadge(log.status)]">{{ statusMap.STATUS_LABEL[log.status] ?? log.status }}</span>
           </td>
           <td>
             <span :class="['role-badge', log.role === 'purchase' ? 'role-purchase' : 'role-user']">
@@ -107,10 +102,82 @@ const formatDateTime = (value) => {
   display: inline-block; padding: 3px 10px; border-radius: 6px;
   font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; white-space: nowrap;
 }
-.badge-accept  { background: var(--accept-bg);  color: var(--accept);  border: 1px solid var(--accept-border);  }
-.badge-waiting { background: var(--waiting-bg); color: var(--waiting); border: 1px solid var(--waiting-border); }
-.badge-resent  { background: var(--resent-bg);  color: var(--resent);  border: 1px solid var(--resent-border);  }
-.badge-cancel  { background: var(--cancel-bg);  color: var(--cancel);  border: 1px solid var(--cancel-border);  }
+
+/* user_pending: รอ user ส่งคำขอ/ดำเนินการต่อ ให้ความรู้สึก "รอคิว" ที่ต้องสนใจ
+   ใช้โทนส้ม (ไม่ใช่เหลืองอำพันแบบ waiting-quotation เพื่อไม่ให้สับสนกันเป็นสถานะเดียวกัน) */
+.badge-pending {
+  background: var(--pending-bg, rgba(249, 115, 22, 0.18));
+  color: var(--pending, #c7935b);
+  border: 1px solid var(--pending-border, rgba(251, 146, 60, 0.4));
+}
+
+/* user_draft: ยังไม่ส่ง ไม่มี action ใด ๆ เกิดขึ้น จึงคงโทนเทาเป็นกลาง */
+.badge-draft {
+  background: var(--draft-bg, rgba(148, 163, 184, 0.16));
+  color: var(--draft, #a9b1b9);
+  border: 1px solid var(--draft-border, rgba(148, 163, 184, 0.35));
+}
+.badge-purchase-accept {
+  background: var(--accept-bg, rgba(16, 185, 129, 0.22));
+  color: var(--accept, #6ee7b7);
+  border: 1px solid var(--accept-border, rgba(52, 211, 153, 0.45));
+}
+.badge-waiting-quotation {
+  background: var(--waiting-bg, rgba(245, 158, 11, 0.22));
+  color: var(--waiting, #fde68a);
+  border: 1px solid var(--waiting-border, rgba(251, 191, 36, 0.45));
+}
+.badge-purchase-compare {
+  background: var(--compare-bg, rgba(140, 34, 238, 0.2));
+  color: var(--compare, #5e1fa1);
+  border: 1px solid var(--compare-border, rgba(160, 69, 251, 0.4));
+}
+.badge-user-confirm {
+  background: var(--confirm-bg, rgba(59, 130, 246, 0.2));
+  color: var(--confirm, #3187ea);
+  border: 1px solid var(--confirm-border, rgba(96, 165, 250, 0.4));
+}
+.badge-purchase-confirm {
+  background: var(--pconfirm-bg, rgba(20, 184, 166, 0.2));
+  color: var(--pconfirm, #5eead4);
+  border: 1px solid var(--pconfirm-border, rgba(45, 212, 191, 0.4));
+}
+.badge-finish {
+  background: var(--finish-bg, rgba(34, 197, 94, 0.24));
+  color: var(--finish, #049439);
+  border: 1px solid var(--finish-border, rgba(74, 222, 128, 0.45));
+}
+.badge-reject {
+  background: var(--resent-bg, rgba(239, 68, 68, 0.22));
+  color: var(--resent, #fca5a5);
+  border: 1px solid var(--resent-border, rgba(248, 113, 113, 0.45));
+}
+.badge-cancel {
+  background: var(--cancel-bg, rgba(148, 163, 184, 0.16));
+  color: var(--cancel, #e2e8f0);
+  border: 1px solid var(--cancel-border, rgba(148, 163, 184, 0.35));
+}
+
+.badge-purchase-compare {
+  background: var(--compare-bg, rgba(140, 34, 238, 0.2));
+  color: var(--compare, #5e1fa1);
+  border: 1px solid var(--compare-border, rgba(160, 69, 251, 0.4));
+}
+.badge-user-confirm {
+  background: var(--confirm-bg, rgba(59, 130, 246, 0.2));
+  color: var(--confirm, #3187ea);
+  border: 1px solid var(--confirm-border, rgba(96, 165, 250, 0.4));
+}
+.badge-cost-saving {
+  background: var(--saving-bg, rgba(234, 179, 8, 0.2));
+  color: var(--saving, #9f7906);
+  border: 1px solid var(--saving-border, rgba(250, 204, 21, 0.4));
+}
+.badge-purchase-confirm {
+  background: var(--pconfirm-bg, rgba(20, 184, 166, 0.2));
+  color: var(--pconfirm, #208872);
+  border: 1px solid var(--pconfirm-border, rgba(45, 212, 191, 0.4));
+}
 
 .role-badge { display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; }
 .role-user     { background: rgba(56,163,245,0.1);  color: #38a3f5;  border: 1px solid rgba(56,163,245,0.25); }

@@ -2,38 +2,69 @@
 import { ref, computed, onMounted } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useRFQDrawerStore } from "../../stores/rfqDrawer";
+import { useAuthStore } from "../../stores/auth";
 import DatePicker from "primevue/datepicker";
 import Select from "primevue/select";
 import { apiFetch } from "../../utils/api";
-
 import Message from "primevue/message";
 import InputText from "primevue/inputtext";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const drawer = useRFQDrawerStore();
 const toast = useToast();
+const auth = useAuthStore();
 const isSubmitting = ref(false);
 const category = computed(() => drawer.category);
-const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
+const BASE = `${import.meta.env.VITE_API_URL}`;
 
 const categoryTypeMap = {
   "project-revenue": "Project Revenue (I/O)",
-  lpg: "LPG 5Years & Yearly Insp",
-  calibration: "Calibration Gas Detector",
+  "lpg": "LPG 5Years & Yearly Insp",
+  "calibration": "Calibration Gas Detector",
   "project-expense": "Project Expense (I/O)",
   "trading-cylinder": "Trading Gas Cylinder, Trading other",
   "trading-bulk": "Trading Gas Bulk",
   "fix-asset-cylinder": "Fix Asset Gas Cylinder",
-  expense: "Expense",
+  "expense": "Expense",
   "spare-parts": "Spare parts & Equipment For Gas",
   "fix-asset": "Fix Asset",
 };
 
 const categoryUomMap = [
-  { label: "จำนวนชิ้น (ea, pc)", value: "ea" },
-  { label: "ชุด (set)", value: "set" },
-  { label: "น้ำหนัก (kg, ton)", value: "kg" },
-  { label: "ปริมาตร (liter, m3)", value: "liter" },
+  { label: "ชิ้น (Piece)", value: "PC" },
+  { label: "ชุด (Set)", value: "SET" },
+  { label: "กิโลกรัม (Kilogram)", value: "KG" },
+  { label: "ลิตร (Liter)", value: "L" },
+  { label: "พาเลท (Pallet)", value: "PAL" },
+  { label: "กระป๋อง (Can)", value: "CAN" },
+  { label: "ถังบรรจุ (Cylinder)", value: "CYL" },
+  { label: "กล่อง (Box)", value: "BOX" },
+  { label: "ม้วน (Roll)", value: "ROL" },
+  { label: "งาน/โครงการ (Job)", value: "JOB" },
+  { label: "ถัง/แท็งก์ (Tank)", value: "TAN" },
+  { label: "เดือน (Month)", value: "MON" },
+  { label: "คู่ (Pair)", value: "PAA" },
+  { label: "แพ็ค/ห่อ (Pack)", value: "PAC" },
+  { label: "รีม (Ream)", value: "REA" },
+  { label: "ปี (Year)", value: "YR" },
 ];
+
+const categoryPurposeMap = [
+  { label: "Budget Plan (สำหรับวางแผน)", value: "budget" },
+  { label: "Price Compare (ต้องการซื้อจริง)", value: "compare" },
+  { label: "Bidding (เสนอขาย)", value: "bidding" },
+];
+
+const runningNum = ref(5);
+
+const rfqNumber = computed(() => {
+  const now = new Date();
+  const yy = now.getFullYear().toString().slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const xxx = String(runningNum.value).padStart(3, "0");
+  return `EN-${yy}${mm}${xxx}`;
+});
 
 const prefilledType = computed(() =>
   category.value ? (categoryTypeMap[category.value.id] ?? "") : "",
@@ -43,7 +74,253 @@ const prefilledUom = computed(() =>
   category.value ? (categoryUomMap[category.value.id] ?? "") : "",
 );
 
+const prefilledPurpose = computed(() =>
+  category.value ? (categoryPurposeMap[category.value.id] ?? "") : "",
+);
+
 const isTypeLocked = computed(() => !!prefilledType.value);
+
+
+/* ── Category data ── */
+const typeCodeKeyMap = ref([
+  {
+    ids: "project-revenue",
+    codes: [
+      { code: "PS", descKey: "codes.desc-project-revenue" }
+    ]
+  },
+  {
+    ids: "lpg",
+    codes: [
+      { code: "PS", descKey: "codes.desc-lpg-5year" }
+    ]
+  },
+  {
+    ids: "calibration",
+    codes: [
+      { code: "SE", descKey: "codes.desc-service-charge" }
+    ]
+  },
+  {
+    ids: "project-expense",
+    codes: [
+      { code: "SE", descKey: "codes.desc-service-charge" },
+      { code: "PM", descKey: "codes.desc-pm" }
+    ]
+  },
+  {
+    ids: "trading-cylinder",
+    codes: [
+      { code: "TC", descKey: "codes.desc-trading-gas-cylinder" }
+    ]
+  },
+  {
+    ids: "trading-bulk",
+    codes: [
+      { code: "TB", descKey: "codes.desc-trading-gas-bulk" }
+    ]
+  },
+  {
+    ids: "fix-asset-cylinder",
+    codes: [
+      { code: "AC", descKey: "codes.desc-fixed-asset-gas" }
+    ]
+  },
+  {
+    ids: "expense",
+    codes: [
+      { code: "SE", descKey: "codes.desc-service-charge" },
+      { code: "EX", descKey: "codes.desc-expense-general" }
+    ]
+  },
+  {
+    ids: "spare-parts",
+    codes: [
+      { code: "CS", descKey: "codes.desc-central-store" }
+    ]
+  },
+  {
+    ids: "fix-asset",
+    codes: [
+      { code: "FA", descKey: "codes.desc-fixed-asset-specified" }
+    ]
+  },
+]);
+
+// ── Field open/close config by Type ──────────────────────────
+const typeLabelToId = Object.fromEntries(
+  Object.entries(categoryTypeMap).map(([id, label]) => [label, id]),
+);
+
+function getCodesForType(typeId) {
+  if (!typeId) return [];
+  const entry = typeCodeKeyMap.value.find((c) => c.ids === typeId);
+  return entry ? entry.codes : [];
+}
+
+function typeCodeHint(item) {
+  const typeId = typeLabelToId[item.type];
+  const codes = getCodesForType(typeId);
+
+  if (!codes.length) return "";
+
+  return  codes.map((c) => `[${c.code}] · ${t(c.descKey)} `).join(`                                 `);
+}
+
+
+const OPEN_FIELDS_BY_TYPE = {
+  "project-revenue": [
+    "projectName",
+    "glCode",
+    "itemDescription",
+    "quantity",
+    "uom",
+    "customer",
+    "addressLocation",
+  ],
+  lpg: [
+    "projectName",
+    "glCode",
+    "itemDescription",
+    "quantity",
+    "uom",
+    "customer",
+    "addressLocation",
+  ],
+  calibration: [
+    "projectName",
+    "glCode",
+    "itemDescription",
+    "model",
+    "brand",
+    "forGas",
+    "quantity",
+    "uom",
+    "customer",
+    "addressLocation",
+  ],
+  "project-expense": [
+    "projectName",
+    "glCode",
+    "itemDescription",
+    "quantity",
+    "uom",
+    "customer",
+    "addressLocation",
+  ],
+  "trading-cylinder": [
+    "sapItem",
+    "itemDescription",
+    "specPurity",
+    "cylinderType",
+    "quantity",
+    "uom",
+    "cylinderSize",
+    "makerSource",
+    "requiredValve",
+    "purposeApplication",
+    "customer",
+    "addressLocation",
+  ],
+  "trading-bulk": [
+    "itemDescription",
+    "specPurity",
+    "cylinderType",
+    "quantity",
+    "uom",
+    "cylinderSize",
+    "makerSource",
+    "requiredValve",
+    "purposeApplication",
+    "customer",
+    "addressLocation",
+  ],
+  "fix-asset-cylinder": [
+    "sapItem",
+    "itemDescription",
+    "specPurity",
+    "cylinderType",
+    "quantity",
+    "uom",
+    "cylinderSize",
+    "makerSource",
+    "requiredValve",
+    "purposeApplication",
+    "customer",
+    "addressLocation",
+  ],
+  expense: [
+    "glCode",
+    "sapItem",
+    "itemDescription",
+    "specPartNo",
+    "model",
+    "brand",
+    "quantity",
+    "uom",
+    "purposeApplication",
+  ],
+  "spare-parts": [
+    "glCode",
+    "sapItem",
+    "itemDescription",
+    "specPartNo",
+    "model",
+    "brand",
+    "forGas",
+    "quantity",
+    "uom",
+    "purposeApplication",
+  ],
+  "fix-asset": [
+    "sapItem",
+    "itemDescription",
+    "specPartNo",
+    "quantity",
+    "uom",
+    "purposeApplication",
+  ],
+};
+
+const ALWAYS_OPEN_FIELDS = ["itemDescription", "quantity", "uom"];
+
+function isFieldOpen(item, field) {
+  if (ALWAYS_OPEN_FIELDS.includes(field)) return true;
+  const typeId = typeLabelToId[item.type];
+  if (!typeId) return false;
+  const openList = OPEN_FIELDS_BY_TYPE[typeId];
+  if (!openList) return true;
+  return openList.includes(field);
+}
+
+
+function clearClosedFields(item) {
+  Object.keys(createEmptyItem()).forEach((field) => {
+    if (
+      [
+        "projectName",
+        "glCode",
+        "sapItem",
+        "itemDescription",
+        "specPartNo",
+        "model",
+        "brand",
+        "forGas",
+        "specPurity",
+        "cylinderType",
+        "cylinderSize",
+        "makerSource",
+        "requiredValve",
+        "purposeApplication",
+        "customer",
+        "addressLocation",
+      ].includes(field) &&
+      !isFieldOpen(item, field)
+    ) {
+      item[field] = "";
+    }
+  });
+}
 
 import { watch } from "vue";
 watch(
@@ -66,14 +343,25 @@ watch(
   { immediate: true },
 );
 
+watch(
+  prefilledPurpose,
+  (val) => {
+    if (val && items.value.length > 0) {
+      items.value[0].uom = val;
+    }
+  },
+  { immediate: true },
+);
+
 const allSteps = [
-  { id: "user_fill", label: "User Fill\nData", role: "user" },
-  { id: "purchase_accept", label: "Purchase\nAccept", role: "purchase" },
-  { id: "waiting_quote", label: "Waiting\nQuotation", role: "purchase" },
-  { id: "purchase_compare", label: "Purchase\nCompare", role: "purchase" },
-  { id: "user_confirm", label: "User\nConfirm", role: "user" },
-  { id: "purchase_confirm", label: "Purchase\nConfirm", role: "purchase" },
-  { id: "finish", label: "Finish", role: "all" },
+   { id: "user_pending", label: "User \nPending" },
+  { id: "purchase_accept", label: "Purchase\nAccept" },
+  { id: "waiting_quotation", label: "Waiting\nQuotation" },
+  { id: "purchase_compare", label: "Purchase\nCompare" },
+  { id: "user_confirm", label: "User\nConfirm" },
+  { id: "cost_saving", label: "Cost\nSaving" },
+  { id: "purchase_confirm", label: "Purchase\nConfirm" },
+  { id: "finish", label: "Finish" },
 ];
 
 const activeStepIndex = computed(() => {
@@ -117,7 +405,7 @@ const createEmptyItem = () => ({
   attachEtc: null,
 });
 
-// ── Patterns ──
+// ── Patterns ──────────────────────────────────────────────────
 const PATTERNS = {
   brand: /^[a-zA-Z0-9\s\-&.,()]+$/,
   forGas: /^[a-zA-Z0-9ก-๙\s\-/()%.,]+$/,
@@ -127,16 +415,33 @@ const PATTERNS = {
   cylinderSize: /^\d+(\.\d+)?$/,
   makerSource: /^[a-zA-Z0-9\s\-/&.,()]+$/,
   requiredValve: /^[a-zA-Z0-9\s\-/(),']+$/,
-  noWeirdChars: /^[^@~#$^`*]+$/, // purposeApplication, addressLocation, remark
+  noWeirdChars: /^[^@~#$^`*]+$/,
   customer: /^[a-zA-Z0-9ก-๙\s\-.(),&']+$/,
   recommendVendor: /^[a-zA-Z0-9ก-๙\s\-/&.,()]+$/,
+  projectName: /^[a-zA-Z0-9ก-๙\s\-/&.,()_#]+$/,
+  specPartNo: /^[a-zA-Z0-9\s\-/&.,()_#]+$/,
+  model: /^[a-zA-Z0-9\s\-/&.,()_#+N/A]+$/,
+  remark: /^[^@~$^`]+$/,
 };
 
 const items = ref([createEmptyItem()]);
 
+// ── Reset entire form ──────────────────────────────────────────
+function resetForm() {
+  items.value = [createEmptyItem()];
+  errors.value = {};
+  fileInputRefs.value = {};
+  // re-apply prefilledType/Uom
+  if (prefilledType.value) items.value[0].type = prefilledType.value;
+  if (prefilledUom.value) items.value[0].uom = prefilledUom.value;
+}
+
 function addItem() {
   if (items.value.length < 50) {
-    items.value.push(createEmptyItem());
+    const newItem = createEmptyItem();
+    if (prefilledType.value) newItem.type = prefilledType.value;
+    if (prefilledUom.value) newItem.uom = prefilledUom.value;
+    items.value.push(newItem);
   }
 }
 
@@ -158,9 +463,8 @@ const fileInputRefs = ref({});
 function onFileChange(event, item, field) {
   item[field] = event.target.files[0] ?? null;
   const idx = items.value.indexOf(item);
-  const key = `items[${idx}].attachDWG`;
-  if (errors.value[key]) delete errors.value[key];
   clearError(idx, field);
+  clearError(idx, "attachDWG"); // clear group error
 }
 
 function removeFile(item, field) {
@@ -181,7 +485,6 @@ async function fetchGlCodes() {
     const res = await apiFetch(`${BASE}/api/doc-request/gl-code`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-
     glCodeOptions.value = data.map((g) => ({
       code: g.code,
       description: g.description,
@@ -227,8 +530,15 @@ function validate() {
   return Object.keys(result.errors).length === 0;
 }
 
+function toLocalDateString(date) {
+  if (!(date instanceof Date)) return "";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 async function handleAction(action) {
-  // Validate
   if (!validate()) {
     toast.add({
       severity: "warn",
@@ -239,10 +549,109 @@ async function handleAction(action) {
     return;
   }
 
-  if (action === "cancel" || action === "draft") {
+  if (action === "cancel") {
     drawer.closeDrawer();
     return;
   }
+
+  if (action === "draft") {
+    isSubmitting.value = true;
+    try {
+      const formData = new FormData();
+      const appendIf = (key, value) => {
+        const v = value ?? "";
+        if (v !== "") formData.append(key, v);
+      };
+
+      items.value.forEach((item, i) => {
+        (formData.append(
+          `items[${i}].TargetPURreply`,
+          item.targetPURreply instanceof Date
+            ? toLocalDateString(item.targetPURreply)
+            : (item.targetPURreply ?? ""),
+        ),
+          appendIf(`items[${i}].Type`, item.type));
+        appendIf(`items[${i}].Quantity`, item.quantity);
+        appendIf(`items[${i}].Uom`, item.uom);
+        appendIf(`items[${i}].ProjectName`, item.projectName);
+        appendIf(`items[${i}].GlCode`, item.glCode);
+        appendIf(`items[${i}].SapItem`, item.sapItem);
+        appendIf(`items[${i}].ItemDescription`, item.itemDescription);
+        appendIf(`items[${i}].SpecPartNo`, item.specPartNo);
+        appendIf(`items[${i}].Model`, item.model);
+        appendIf(`items[${i}].Brand`, item.brand);
+        appendIf(`items[${i}].ForGas`, item.forGas);
+        appendIf(`items[${i}].SpecPurity`, item.specPurity);
+        appendIf(`items[${i}].CylinderType`, item.cylinderType);
+        appendIf(`items[${i}].CylinderSize`, item.cylinderSize);
+        appendIf(`items[${i}].MakerSource`, item.makerSource);
+        appendIf(`items[${i}].RequiredValve`, item.requiredValve);
+        appendIf(`items[${i}].PurposeApplication`, item.purposeApplication);
+        appendIf(`items[${i}].Customer`, item.customer);
+        appendIf(`items[${i}].AddressLocation`, item.addressLocation);
+        appendIf(`items[${i}].RecommendVendor`, item.recommendVendor);
+        appendIf(`items[${i}].Remark`, item.remark);
+
+        if (item.attachDWG)
+          formData.append(`items[${i}].AttachDWG`, item.attachDWG);
+        if (item.attachSpec)
+          formData.append(`items[${i}].AttachSpec`, item.attachSpec);
+        if (item.attachQuotation)
+          formData.append(`items[${i}].AttachQuotation`, item.attachQuotation);
+        if (item.attachEtc)
+          formData.append(`items[${i}].AttachEtc`, item.attachEtc);
+      });
+
+      const res = await apiFetch(`${BASE}/api/doc-request/save-draft`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.status === 401) {
+        toast.add({
+          severity: "error",
+          summary: "Session expired",
+          detail: "Please log in again.",
+          closable: true,
+          life: 5000,
+        });
+        return;
+      }
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.add({
+          severity: "error",
+          summary: "Save draft failed",
+          detail: body.message ?? `Server error (HTTP ${res.status})`,
+          closable: true,
+          life: 6000,
+        });
+        return;
+      }
+      toast.add({
+        severity: "info",
+        summary: "Draft saved",
+        detail: "บันทึกร่างเรียบร้อยแล้ว สามารถกลับมาแก้ไขต่อได้ภายหลัง",
+        closable: true,
+        life: 4000,
+      });
+      resetForm();
+      drawer.closeDrawer();
+    } catch (err) {
+      toast.add({
+        severity: "error",
+        summary: "Network error",
+        detail: err.message,
+        closable: true,
+        life: 6000,
+      });
+    } finally {
+      isSubmitting.value = false;
+    }
+    return;
+  }
+
   if (action === "add") {
     addItem();
     toast.add({
@@ -262,7 +671,6 @@ async function handleAction(action) {
         method: "POST",
         body: JSON.stringify({ items: items.value }),
       });
-
       if (res.status === 401) {
         toast.add({
           severity: "error",
@@ -271,10 +679,8 @@ async function handleAction(action) {
           closable: true,
           life: 5000,
         });
-        router.push("/login");
         return;
       }
-
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         toast.add({
@@ -293,6 +699,7 @@ async function handleAction(action) {
         closable: true,
         life: 4000,
       });
+      resetForm();
       drawer.closeDrawer();
     } catch (err) {
       toast.add({
@@ -308,54 +715,49 @@ async function handleAction(action) {
     return;
   }
 
-  // Send (User only)
+  // ── Send (User only) ──────────────────────────────────────
   if (action === "send") {
     isSubmitting.value = true;
+
     try {
       const formData = new FormData();
+      const appendIf = (key, value) => {
+        const v = value ?? "";
+        if (v !== "") formData.append(key, v);
+      };
 
       items.value.forEach((item, i) => {
         formData.append(
           `items[${i}].TargetPURreply`,
           item.targetPURreply instanceof Date
-            ? item.targetPURreply.toISOString().slice(0, 10)
+            ? toLocalDateString(item.targetPURreply)
             : (item.targetPURreply ?? ""),
         );
-        formData.append(`items[${i}].ProjectName`, item.projectName ?? "");
-        formData.append(`items[${i}].GlCode`, item.glCode ?? "");
-        formData.append(`items[${i}].SapItem`, item.sapItem ?? "");
-        formData.append(
-          `items[${i}].ItemDescription`,
-          item.itemDescription ?? "",
-        );
-        formData.append(`items[${i}].SpecPartNo`, item.specPartNo ?? "");
-        formData.append(`items[${i}].Model`, item.model ?? "");
-        formData.append(`items[${i}].Brand`, item.brand ?? "");
-        formData.append(`items[${i}].ForGas`, item.forGas ?? "");
+     
         formData.append(`items[${i}].Type`, item.type ?? "");
-        formData.append(`items[${i}].SpecPurity`, item.specPurity ?? "");
-        formData.append(`items[${i}].CylinderType`, item.cylinderType ?? "");
         formData.append(`items[${i}].Quantity`, item.quantity ?? "");
         formData.append(`items[${i}].Uom`, item.uom ?? "");
-        formData.append(`items[${i}].CylinderSize`, item.cylinderSize ?? "");
-        formData.append(`items[${i}].MakerSource`, item.makerSource ?? "");
-        formData.append(`items[${i}].RequiredValve`, item.requiredValve ?? "");
-        formData.append(
-          `items[${i}].PurposeApplication`,
-          item.purposeApplication ?? "",
-        );
-        formData.append(`items[${i}].Customer`, item.customer ?? "");
-        formData.append(
-          `items[${i}].AddressLocation`,
-          item.addressLocation ?? "",
-        );
-        formData.append(
-          `items[${i}].RecommendVendor`,
-          item.recommendVendor ?? "",
-        );
-        formData.append(`items[${i}].Remark`, item.remark ?? "");
 
-        // Files
+       
+        appendIf(`items[${i}].ProjectName`, item.projectName);
+        appendIf(`items[${i}].GlCode`, item.glCode);
+        appendIf(`items[${i}].SapItem`, item.sapItem);
+        appendIf(`items[${i}].ItemDescription`, item.itemDescription);
+        appendIf(`items[${i}].SpecPartNo`, item.specPartNo);
+        appendIf(`items[${i}].Model`, item.model);
+        appendIf(`items[${i}].Brand`, item.brand);
+        appendIf(`items[${i}].ForGas`, item.forGas);
+        appendIf(`items[${i}].SpecPurity`, item.specPurity);
+        appendIf(`items[${i}].CylinderType`, item.cylinderType);
+        appendIf(`items[${i}].CylinderSize`, item.cylinderSize);
+        appendIf(`items[${i}].MakerSource`, item.makerSource);
+        appendIf(`items[${i}].RequiredValve`, item.requiredValve);
+        appendIf(`items[${i}].PurposeApplication`, item.purposeApplication);
+        appendIf(`items[${i}].Customer`, item.customer);
+        appendIf(`items[${i}].AddressLocation`, item.addressLocation);
+        appendIf(`items[${i}].RecommendVendor`, item.recommendVendor);
+        appendIf(`items[${i}].Remark`, item.remark);
+
         if (item.attachDWG)
           formData.append(`items[${i}].AttachDWG`, item.attachDWG);
         if (item.attachSpec)
@@ -365,13 +767,8 @@ async function handleAction(action) {
         if (item.attachEtc)
           formData.append(`items[${i}].AttachEtc`, item.attachEtc);
       });
-
-      const res = await fetch(`${BASE}/api/doc-request/create`, {
+      const res = await apiFetch(`${BASE}/api/doc-request/create`, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-        },
         body: formData,
       });
 
@@ -385,7 +782,6 @@ async function handleAction(action) {
         });
         return;
       }
-
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         toast.add({
@@ -405,6 +801,7 @@ async function handleAction(action) {
         closable: true,
         life: 4000,
       });
+      resetForm(); 
       drawer.closeDrawer();
     } catch (err) {
       toast.add({
@@ -419,15 +816,14 @@ async function handleAction(action) {
     }
   }
 
-  // Accept (Purchase only)
+  // ── Accept (Purchase only) ────────────────────────────────
   if (action === "accept") {
     isSubmitting.value = true;
     try {
-      const res = await fetch(`${BASE}/api/doc-request/accept`, {
+      const res = await apiFetch(`${BASE}/api/doc-request/accept`, {
         method: "POST",
         body: JSON.stringify({ items: items.value }),
       });
-
       if (res.status === 401) {
         toast.add({
           severity: "error",
@@ -438,7 +834,6 @@ async function handleAction(action) {
         });
         return;
       }
-
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         toast.add({
@@ -450,7 +845,6 @@ async function handleAction(action) {
         });
         return;
       }
-
       toast.add({
         severity: "success",
         summary: "Request accepted",
@@ -458,6 +852,7 @@ async function handleAction(action) {
         closable: true,
         life: 4000,
       });
+      resetForm();
       drawer.closeDrawer();
     } catch (err) {
       toast.add({
@@ -473,11 +868,11 @@ async function handleAction(action) {
   }
 }
 
-// ── SAP Options ──
+// ── SAP Options ───────────────────────────────────────────────
 const sapItemOptions = ref([]);
 const isLoadingSapItems = ref(false);
 
-async function fetchSapItems(params) {
+async function fetchSapItems() {
   isLoadingSapItems.value = true;
   try {
     const res = await apiFetch(`${BASE}/api/doc-request/sap-item`);
@@ -499,80 +894,88 @@ async function fetchSapItems(params) {
   }
 }
 
-// validation rules
+// ── Validation resolver ──────────────────────────────────────
+
 const resolver = ({ values }) => {
   const errors = {};
 
   values.items?.forEach((item, i) => {
-    // ── General Info ──
+  
     if (!item.targetPURreply)
-      if (!item.targetPURreply)
-        errors[`items[${i}].targetPURreply`] = [
-          { message: "กรุณาเลือก Target PUR Reply" },
+      errors[`items[${i}].targetPURreply`] = [
+        { message: "กรุณาเลือก Target PUR Reply" },
+      ];
+
+    if (item.projectName?.trim()) {
+      if (item.projectName.trim().length > 150)
+        errors[`items[${i}].projectName`] = [
+          { message: "Project Name ต้องไม่เกิน 150 ตัวอักษร" },
         ];
+      else if (!PATTERNS.projectName.test(item.projectName.trim()))
+        errors[`items[${i}].projectName`] = [
+          { message: "Project Name มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
+        ];
+    }
 
-    if (!item.projectName?.trim())
-      errors[`items[${i}].projectName`] = [
-        { message: "กรุณากรอก Project Name" },
-      ];
-    else if (item.projectName.trim().length > 150)
-      errors[`items[${i}].projectName`] = [
-        { message: "Project Name ต้องไม่เกิน 150 ตัวอักษร" },
-      ];
+    // ── GL Code (optional) ── ข้ามไป
+    // ── SAP Item (optional) ── ข้ามไป
 
-    if (!item.glCode)
-      errors[`items[${i}].glCode`] = [{ message: "กรุณาเลือก GL Code" }];
-
-    if (!item.sapItem)
-      errors[`items[${i}].sapItem`] = [
-        { message: "กรุณากเลือก SAP Item Number" },
-      ];
-
-    if (!item.itemDescription?.trim())
-      errors[`items[${i}].itemDescription`] = [
-        { message: "กรุณากรอก Item Description" },
-      ];
-    else if (item.itemDescription.trim().length > 500)
+    // ── Item Description (optional, validate if filled) ──
+    if (item.itemDescription?.trim().length > 500)
       errors[`items[${i}].itemDescription`] = [
         { message: "Item Description ต้องไม่เกิน 500 ตัวอักษร" },
       ];
-
-    if (!item.specPartNo?.trim())
-      errors[`items[${i}].specPartNo`] = [
-        { message: "กรุณากรอก Specification / Part No." },
-      ];
-    else if (item.specPartNo.trim().length > 200)
-      errors[`items[${i}].specPartNo`] = [
-        { message: "Spec / Part No. ต้องไม่เกิน 200 ตัวอักษร" },
+    else if (
+      item.itemDescription?.trim() &&
+      !PATTERNS.noWeirdChars.test(item.itemDescription.trim())
+    )
+      errors[`items[${i}].itemDescription`] = [
+        { message: "Item Description มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
       ];
 
+    // ── Spec / Part No. (optional, validate if filled) ──
+    if (item.specPartNo?.trim()) {
+      if (item.specPartNo.trim().length > 200)
+        errors[`items[${i}].specPartNo`] = [
+          { message: "Spec / Part No. ต้องไม่เกิน 200 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.specPartNo.test(item.specPartNo.trim()))
+        errors[`items[${i}].specPartNo`] = [
+          { message: "Spec / Part No. มีอักขระที่ไม่อนุญาต" },
+        ];
+    }
+
+    // ── Model (optional, validate if filled) ──
     if (item.model?.trim().length > 100)
       errors[`items[${i}].model`] = [
         { message: "Model ต้องไม่เกิน 100 ตัวอักษร" },
       ];
 
-    if (!item.brand?.trim())
-      errors[`items[${i}].brand`] = [{ message: "กรุณากรอก Brand" }];
-    else if (item.brand.trim().length > 100)
-      errors[`items[${i}].brand`] = [
-        { message: "Brand ต้องไม่เกิน 100 ตัวอักษร" },
-      ];
-    else if (!PATTERNS.brand.test(item.brand.trim()))
-      errors[`items[${i}].brand`] = [
-        { message: "Brand ใช้ได้เฉพาะภาษาอังกฤษ ตัวเลข และ - & . , ( )" },
-      ];
+    // ── Brand (optional, validate if filled) ──
+    if (item.brand?.trim()) {
+      if (item.brand.trim().length > 100)
+        errors[`items[${i}].brand`] = [
+          { message: "Brand ต้องไม่เกิน 100 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.brand.test(item.brand.trim()))
+        errors[`items[${i}].brand`] = [
+          { message: "Brand ใช้ได้เฉพาะภาษาอังกฤษ ตัวเลข และ - & . , ( )" },
+        ];
+    }
 
-    if (!item.forGas?.trim())
-      errors[`items[${i}].forGas`] = [{ message: "กรุณากรอก For GAS" }];
-    else if (item.forGas.trim().length > 100)
-      errors[`items[${i}].forGas`] = [
-        { message: "For GAS ต้องไม่เกิน 100 ตัวอักษร" },
-      ];
-    else if (!PATTERNS.forGas.test(item.forGas.trim()))
-      errors[`items[${i}].forGas`] = [
-        { message: "For GAS มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
-      ];
+    // ── For GAS (optional, validate if filled) ──
+    if (item.forGas?.trim()) {
+      if (item.forGas.trim().length > 100)
+        errors[`items[${i}].forGas`] = [
+          { message: "For GAS ต้องไม่เกิน 100 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.forGas.test(item.forGas.trim()))
+        errors[`items[${i}].forGas`] = [
+          { message: "For GAS มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
+        ];
+    }
 
+    // ── Attachments (at least 1 required) ──
     if (
       !item.attachDWG &&
       !item.attachSpec &&
@@ -583,27 +986,35 @@ const resolver = ({ values }) => {
         { message: "กรุณาแนบไฟล์ DWG หรือ Specification อย่างน้อย 1 ไฟล์" },
       ];
 
+    // ── Type (required) ──
     if (!item.type)
       errors[`items[${i}].type`] = [{ message: "กรุณาเลือก Type" }];
 
-    if (!item.specPurity?.trim())
-      errors[`items[${i}].specPurity`] = [
-        { message: "กรุณากรอก Specification / Purity" },
-      ];
+    // ── Spec / Purity (optional, validate if filled) ──
+    if (item.specPurity?.trim()) {
+      if (item.specPurity.trim().length > 100)
+        errors[`items[${i}].specPurity`] = [
+          { message: "Spec / Purity ต้องไม่เกิน 100 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.specPurity.test(item.specPurity.trim()))
+        errors[`items[${i}].specPurity`] = [
+          { message: "Spec / Purity มีอักขระที่ไม่อนุญาต" },
+        ];
+    }
 
-    if (!item.cylinderType?.trim())
-      errors[`items[${i}].cylinderType`] = [
-        { message: "กรุณากรอก Cylinder Type" },
-      ];
-    else if (item.cylinderType.trim().length > 100)
-      errors[`items[${i}].cylinderType`] = [
-        { message: "Cylinder Type ต้องไม่เกิน 100 ตัวอักษร" },
-      ];
-    else if (!PATTERNS.cylinderType.test(item.cylinderType.trim()))
-      errors[`items[${i}].cylinderType`] = [
-        { message: "Cylinder Type มีอักขระที่ไม่อนุญาต" },
-      ];
+    // ── Cylinder Type (optional, validate if filled) ──
+    if (item.cylinderType?.trim()) {
+      if (item.cylinderType.trim().length > 100)
+        errors[`items[${i}].cylinderType`] = [
+          { message: "Cylinder Type ต้องไม่เกิน 100 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.cylinderType.test(item.cylinderType.trim()))
+        errors[`items[${i}].cylinderType`] = [
+          { message: "Cylinder Type มีอักขระที่ไม่อนุญาต" },
+        ];
+    }
 
+    // ── Quantity (required) ──
     if (
       !item.quantity ||
       !Number.isInteger(Number(item.quantity)) ||
@@ -613,110 +1024,117 @@ const resolver = ({ values }) => {
         { message: "กรุณากรอก Quantity เป็นจำนวนเต็มและมากกว่า 0" },
       ];
 
+    // ── UOM (required) ──
     if (!item.uom?.trim())
       errors[`items[${i}].uom`] = [{ message: "กรุณาเลือก UOM" }];
 
-    if (!item.cylinderSize?.trim())
-      errors[`items[${i}].cylinderSize`] = [
-        { message: "กรุณากรอก Cylinder Size" },
-      ];
-    else if (!PATTERNS.cylinderSize.test(item.cylinderSize.trim()))
-      errors[`items[${i}].cylinderSize`] = [
-        { message: "Cylinder Size ต้องเป็นตัวเลขเท่านั้น เช่น 50 หรือ 47.5" },
-      ];
+    // ── Cylinder Size (optional, validate if filled) ──
+    if (item.cylinderSize?.trim()) {
+      if (!PATTERNS.cylinderSize.test(item.cylinderSize.trim()))
+        errors[`items[${i}].cylinderSize`] = [
+          { message: "Cylinder Size ต้องเป็นตัวเลขเท่านั้น เช่น 50 หรือ 47.5" },
+        ];
+    }
 
-    if (!item.makerSource?.trim())
-      errors[`items[${i}].makerSource`] = [
-        { message: "กรุณากรอก Maker / Source" },
-      ];
-    else if (item.makerSource.trim().length > 150)
-      errors[`items[${i}].makerSource`] = [
-        { message: "Maker / Source ต้องไม่เกิน 150 ตัวอักษร" },
-      ];
-    else if (!PATTERNS.makerSource.test(item.makerSource.trim()))
-      errors[`items[${i}].makerSource`] = [
-        {
-          message:
-            "Maker / Source ใช้ได้เฉพาะภาษาอังกฤษ ตัวเลข และ - / & . , ( )",
-        },
-      ];
+    // ── Maker / Source (optional, validate if filled) ──
+    if (item.makerSource?.trim()) {
+      if (item.makerSource.trim().length > 150)
+        errors[`items[${i}].makerSource`] = [
+          { message: "Maker / Source ต้องไม่เกิน 150 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.makerSource.test(item.makerSource.trim()))
+        errors[`items[${i}].makerSource`] = [
+          {
+            message:
+              "Maker / Source ใช้ได้เฉพาะภาษาอังกฤษ ตัวเลข และ - / & . , ( )",
+          },
+        ];
+    }
 
-    if (!item.requiredValve?.trim())
-      errors[`items[${i}].requiredValve`] = [
-        { message: "กรุณากรอก Required Type Valve" },
-      ];
-    else if (item.requiredValve.trim().length > 100)
-      errors[`items[${i}].requiredValve`] = [
-        { message: "Required Valve ต้องไม่เกิน 100 ตัวอักษร" },
-      ];
-    else if (!PATTERNS.requiredValve.test(item.requiredValve.trim()))
-      errors[`items[${i}].requiredValve`] = [
-        { message: "Required Valve มีอักขระที่ไม่อนุญาต" },
-      ];
+    // ── Required Valve (optional, validate if filled) ──
+    if (item.requiredValve?.trim()) {
+      if (item.requiredValve.trim().length > 100)
+        errors[`items[${i}].requiredValve`] = [
+          { message: "Required Valve ต้องไม่เกิน 100 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.requiredValve.test(item.requiredValve.trim()))
+        errors[`items[${i}].requiredValve`] = [
+          { message: "Required Valve มีอักขระที่ไม่อนุญาต" },
+        ];
+    }
 
-    if (!item.purposeApplication?.trim())
-      errors[`items[${i}].purposeApplication`] = [
-        { message: "กรุณากรอก Purpose / Application" },
-      ];
-    else if (item.purposeApplication.trim().length > 300)
-      errors[`items[${i}].purposeApplication`] = [
-        { message: "Purpose / Application ต้องไม่เกิน 300 ตัวอักษร" },
-      ];
-    else if (!PATTERNS.noWeirdChars.test(item.purposeApplication.trim()))
-      errors[`items[${i}].purposeApplication`] = [
-        { message: "มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
-      ];
+    // ── Purpose / Application (optional, validate if filled) ──
+    if (item.purposeApplication?.trim()) {
+      if (item.purposeApplication.trim().length > 300)
+        errors[`items[${i}].purposeApplication`] = [
+          { message: "Purpose / Application ต้องไม่เกิน 300 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.noWeirdChars.test(item.purposeApplication.trim()))
+        errors[`items[${i}].purposeApplication`] = [
+          { message: "มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
+        ];
+    }
 
-    if (!item.customer?.trim())
-      errors[`items[${i}].customer`] = [{ message: "กรุณากรอก Customer" }];
-    else if (item.customer.trim().length > 150)
-      errors[`items[${i}].customer`] = [
-        { message: "Customer ต้องไม่เกิน 150 ตัวอักษร" },
-      ];
-    else if (!PATTERNS.customer.test(item.customer.trim()))
-      errors[`items[${i}].customer`] = [
-        { message: "Customer มีอักขระที่ไม่อนุญาต" },
-      ];
+    // ── Customer (optional, validate if filled) ──
+    if (item.customer?.trim()) {
+      if (item.customer.trim().length > 150)
+        errors[`items[${i}].customer`] = [
+          { message: "Customer ต้องไม่เกิน 150 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.customer.test(item.customer.trim()))
+        errors[`items[${i}].customer`] = [
+          { message: "Customer มีอักขระที่ไม่อนุญาต" },
+        ];
+    }
 
-    if (!item.addressLocation?.trim())
-      errors[`items[${i}].addressLocation`] = [
-        { message: "กรุณากรอก Address / Location" },
-      ];
-    else if (item.addressLocation.trim().length > 300)
-      errors[`items[${i}].addressLocation`] = [
-        { message: "Address ต้องไม่เกิน 300 ตัวอักษร" },
-      ];
-    else if (!PATTERNS.noWeirdChars.test(item.addressLocation.trim()))
-      errors[`items[${i}].addressLocation`] = [
-        { message: "Address มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
-      ];
+    // ── Address / Location (optional, validate if filled) ──
+    if (item.addressLocation?.trim()) {
+      if (item.addressLocation.trim().length > 300)
+        errors[`items[${i}].addressLocation`] = [
+          { message: "Address ต้องไม่เกิน 300 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.noWeirdChars.test(item.addressLocation.trim()))
+        errors[`items[${i}].addressLocation`] = [
+          { message: "Address มีอักขระที่ไม่อนุญาต (@ ~ # $ ^ `)" },
+        ];
+    }
 
-    if (!item.recommendVendor?.trim())
-      errors[`items[${i}].recommendVendor`] = [
-        { message: "กรุณากรอก Recommend Vendor / Brand" },
-      ];
-    else if (item.recommendVendor.trim().length > 200)
-      errors[`items[${i}].recommendVendor`] = [
-        { message: "Recommend Vendor ต้องไม่เกิน 200 ตัวอักษร" },
-      ];
-    else if (!PATTERNS.recommendVendor.test(item.recommendVendor.trim()))
-      errors[`items[${i}].recommendVendor`] = [
-        { message: "Recommend Vendor มีอักขระที่ไม่อนุญาต" },
-      ];
+    // ── Recommend Vendor (optional, validate if filled) ──
+    if (item.recommendVendor?.trim()) {
+      if (item.recommendVendor.trim().length > 200)
+        errors[`items[${i}].recommendVendor`] = [
+          { message: "Recommend Vendor ต้องไม่เกิน 200 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.recommendVendor.test(item.recommendVendor.trim()))
+        errors[`items[${i}].recommendVendor`] = [
+          { message: "Recommend Vendor มีอักขระที่ไม่อนุญาต" },
+        ];
+    }
 
-    if (!item.remark?.trim())
-      errors[`items[${i}].remark`] = [{ message: "กรุณากรอก Remark" }];
-    else if (item.remark.trim().length > 500)
-      errors[`items[${i}].remark`] = [
-        { message: "Remark ต้องไม่เกิน 500 ตัวอักษร" },
-      ];
+    // ── Remark (optional, validate if filled) ──
+    if (item.remark?.trim()) {
+      if (item.remark.trim().length > 500)
+        errors[`items[${i}].remark`] = [
+          { message: "Remark ต้องไม่เกิน 500 ตัวอักษร" },
+        ];
+      else if (!PATTERNS.remark.test(item.remark.trim()))
+        errors[`items[${i}].remark`] = [
+          { message: "Remark มีอักขระที่ไม่อนุญาต (@ ~ $ ^ `)" },
+        ];
+    }
   });
 
   return { errors };
 };
 
 function closeDrawer() {
+  resetForm();
   drawer.closeDrawer();
+}
+
+function onTypeChange(item, index) {
+  clearError(index, "type");
+  clearClosedFields(item);
 }
 </script>
 
@@ -742,18 +1160,19 @@ function closeDrawer() {
                     {{
                       drawer.drawerRole === "purchase"
                         ? "Purchase Accept"
-                        : "User Fill Data"
+                        : "Fill Data"
                     }}
                   </h2>
                   <span class="dh-sub">
-                    RFQ · EN-{{
-                      new Date().toISOString().slice(0, 10).replace(/-/g, "")
-                    }}
                     · {{ items.length }} Item{{ items.length > 1 ? "s" : "" }}
                   </span>
                 </div>
               </div>
-              <button class="dh-close" @click="closeDrawer" aria-label="Close">
+              <button
+                class="dh-close"
+                @click="closeDrawer()"
+                aria-label="Close"
+              >
                 <i class="pi pi-times"></i>
               </button>
             </div>
@@ -788,7 +1207,6 @@ function closeDrawer() {
                     </div>
                     <span class="pipe-label">{{ step.label }}</span>
                   </div>
-
                   <div
                     v-if="i < allSteps.length - 1"
                     class="pipe-arrow"
@@ -850,7 +1268,14 @@ function closeDrawer() {
                   </button>
                 </div>
 
+                <div v-if="!item.type" class="type-lock-hint">
+                  <i class="pi pi-lock" style="font-size: 12px">
+                    กรุณาเลือก Type ก่อน เพื่อปลดล็อกช่องกรอกข้อมูลที่เกี่ยวข้อง
+                  </i>
+                </div>
+
                 <div class="form-grid">
+                  <!-- ══ LEFT COL: General Info ══ -->
                   <div class="form-col">
                     <div class="col-label">
                       <svg
@@ -873,11 +1298,11 @@ function closeDrawer() {
                     <div class="field-row stagger-1">
                       <div class="field field-auto">
                         <label>RFQ No.</label>
-                        <div class="inp-auto">Auto · EN-YYMMDD-XX</div>
+                        <div class="inp-auto">{{ rfqNumber }}</div>
                       </div>
                       <div class="field field-auto">
                         <label>Rev. No.</label>
-                        <div class="inp-auto">Auto · Rev.00</div>
+                        <div class="inp-auto">Rev.00</div>
                       </div>
                     </div>
 
@@ -909,8 +1334,13 @@ function closeDrawer() {
                       </Message>
                     </div>
 
-                    <div class="field stagger-4">
-                      <label>Project Name<span class="req">*</span></label>
+                    <div
+                      class="field stagger-4"
+                      :class="{
+                        'field-closed': !isFieldOpen(item, 'projectName'),
+                      }"
+                    >
+                      <label>Project Name</label>
                       <input
                         v-model="item.projectName"
                         @input="clearError(index, 'projectName')"
@@ -918,10 +1348,14 @@ function closeDrawer() {
                         class="inp"
                         maxlength="150"
                         placeholder="Enter project name"
+                        :disabled="!isFieldOpen(item, 'projectName')"
                         :class="{
                           'inp-error': errors[`items[${index}].projectName`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Project Name</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].projectName`]"
                         severity="error"
@@ -932,14 +1366,18 @@ function closeDrawer() {
                       </Message>
                     </div>
 
-                    <div class="field stagger-5">
-                      <label>GL Code <span class="req">*</span></label>
+                    <div
+                      class="field stagger-5"
+                      :class="{ 'field-closed': !isFieldOpen(item, 'glCode') }"
+                    >
+                      <label>GL Code</label>
                       <Select
                         v-model="item.glCode"
                         @update:modelValue="clearError(index, 'glCode')"
                         :options="glCodeOptions"
                         optionLabel="code"
                         optionValue="code"
+                        :disabled="!isFieldOpen(item, 'glCode')"
                         :placeholder="
                           isLoadingGlCodes
                             ? 'กำลังโหลด...'
@@ -947,18 +1385,12 @@ function closeDrawer() {
                         "
                         :loading="isLoadingGlCodes"
                         filter
+                        filterBy="code,description"
                         filterPlaceholder="Search GL Code..."
                         showClear
                         class="gl-select"
-                        :class="{
-                          'inp-error-select': errors[`items[${index}].glCode`],
-                        }"
-                        :pt="{
-                          root: { style: 'width: 100%' },
-                        }"
-                        @filter="(e) => (e.value = e.value.replace(/\D/g, ''))"
+                        :pt="{ root: { style: 'width: 100%' } }"
                       >
-                        <!-- Custom option แสดง code + label -->
                         <template #option="{ option }">
                           <div class="gl-option">
                             <span class="gl-code">{{ option.code }}</span>
@@ -967,31 +1399,28 @@ function closeDrawer() {
                             }}</span>
                           </div>
                         </template>
-
-                        <!-- แสดงค่าที่เลือกแล้ว -->
                         <template #value="{ value }">
-                          <span v-if="value">
-                            {{ value }} ·
+                          <span v-if="value"
+                            >{{ value }} ·
                             {{
                               glCodeOptions.find((g) => g.code === value)
                                 ?.description
-                            }}
-                          </span>
+                            }}</span
+                          >
                           <span v-else class="gl-placeholder"
                             >— Select GL Code —</span
                           >
                         </template>
                       </Select>
-
-                      <p
-                        v-if="errors[`items[${index}].glCode`]"
-                        class="field-error"
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มีใน GL Code</span
                       >
-                        {{ errors[`items[${index}].glCode`][0].message }}
-                      </p>
                     </div>
 
-                    <div class="field stagger-6">
+                    <div
+                      class="field stagger-6"
+                      :class="{ 'field-closed': !isFieldOpen(item, 'sapItem') }"
+                    >
                       <label>SAP Item No.</label>
                       <Select
                         v-model="item.sapItem"
@@ -999,6 +1428,7 @@ function closeDrawer() {
                         :options="sapItemOptions"
                         optionLabel="code"
                         optionValue="code"
+                        :disabled="!isFieldOpen(item, 'sapItem')"
                         :placeholder="
                           isLoadingSapItems
                             ? 'กำลังโหลด...'
@@ -1006,6 +1436,7 @@ function closeDrawer() {
                         "
                         :loading="isLoadingSapItems"
                         filter
+                        filterBy="code,description"
                         filterPlaceholder="Search SAP Item..."
                         showClear
                         class="gl-select"
@@ -1021,13 +1452,13 @@ function closeDrawer() {
                           </div>
                         </template>
                         <template #value="{ value }">
-                          <span v-if="value">
-                            {{ value }} ·
+                          <span v-if="value"
+                            >{{ value }} ·
                             {{
                               sapItemOptions.find((s) => s.code === value)
                                 ?.description
-                            }}
-                          </span>
+                            }}</span
+                          >
                           <span v-else class="gl-placeholder"
                             >— Select SAP Item —</span
                           >
@@ -1039,7 +1470,7 @@ function closeDrawer() {
                     </div>
 
                     <div class="field stagger-7">
-                      <label>Item Description <span class="req">*</span></label>
+                      <label>Item Description</label>
                       <input
                         v-model="item.itemDescription"
                         @input="clearError(index, 'itemDescription')"
@@ -1052,6 +1483,9 @@ function closeDrawer() {
                             errors[`items[${index}].itemDescription`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Description</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].itemDescription`]"
                         severity="error"
@@ -1064,12 +1498,13 @@ function closeDrawer() {
                       </Message>
                     </div>
 
-                    <div class="field stagger-8">
-                      <label
-                        >Specification / Part No.<span class="req"
-                          >*</span
-                        ></label
-                      >
+                    <div
+                      class="field stagger-8"
+                      :class="{
+                        'field-closed': !isFieldOpen(item, 'specPartNo'),
+                      }"
+                    >
+                      <label>Specification / Part No.</label>
                       <input
                         v-model="item.specPartNo"
                         @input="clearError(index, 'specPartNo')"
@@ -1077,10 +1512,15 @@ function closeDrawer() {
                         class="inp"
                         maxlength="200"
                         placeholder="Spec or part number"
+                        :disabled="!isFieldOpen(item, 'specPartNo')"
                         :class="{
                           'inp-error': errors[`items[${index}].specPartNo`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Spec / Part
+                        No.</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].specPartNo`]"
                         severity="error"
@@ -1091,7 +1531,10 @@ function closeDrawer() {
                       </Message>
                     </div>
 
-                    <div class="field stagger-9">
+                    <div
+                      class="field stagger-9"
+                      :class="{ 'field-closed': !isFieldOpen(item, 'model') }"
+                    >
                       <label>Model</label>
                       <input
                         v-model="item.model"
@@ -1099,15 +1542,27 @@ function closeDrawer() {
                         class="inp"
                         maxlength="100"
                         placeholder="Fix Model or N/A"
+                        :disabled="!isFieldOpen(item, 'model')"
                       />
                       <span class="field-hint"
                         >กรณีไม่มี Fix Model สามารถใส่ N/A ได้</span
                       >
+                      <Message
+                        v-if="errors[`items[${index}].model`]"
+                        severity="error"
+                        size="small"
+                        variant="simple"
+                      >
+                        {{ errors[`items[${index}].model`][0].message }}
+                      </Message>
                     </div>
 
                     <div class="field-row stagger-10">
-                      <div class="field">
-                        <label>Brand<span class="req">*</span></label>
+                      <div
+                        class="field"
+                        :class="{ 'field-closed': !isFieldOpen(item, 'brand') }"
+                      >
+                        <label>Brand</label>
                         <input
                           v-model="item.brand"
                           @input="clearError(index, 'brand')"
@@ -1115,10 +1570,14 @@ function closeDrawer() {
                           class="inp"
                           maxlength="100"
                           placeholder="Brand name"
+                          :disabled="!isFieldOpen(item, 'brand')"
                           :class="{
                             'inp-error': errors[`items[${index}].brand`],
                           }"
                         />
+                        <span class="field-hint"
+                          >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Brand</span
+                        >
                         <Message
                           v-if="errors[`items[${index}].brand`]"
                           severity="error"
@@ -1128,8 +1587,13 @@ function closeDrawer() {
                           {{ errors[`items[${index}].brand`][0].message }}
                         </Message>
                       </div>
-                      <div class="field">
-                        <label>For GAS<span class="req">*</span></label>
+                      <div
+                        class="field"
+                        :class="{
+                          'field-closed': !isFieldOpen(item, 'forGas'),
+                        }"
+                      >
+                        <label>For GAS</label>
                         <input
                           v-model="item.forGas"
                           @input="clearError(index, 'forGas')"
@@ -1137,10 +1601,14 @@ function closeDrawer() {
                           class="inp"
                           maxlength="100"
                           placeholder="Gas type"
+                          :disabled="!isFieldOpen(item, 'forGas')"
                           :class="{
                             'inp-error': errors[`items[${index}].forGas`],
                           }"
                         />
+                        <span class="field-hint"
+                          >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี For GAS</span
+                        >
                         <Message
                           v-if="errors[`items[${index}].forGas`]"
                           severity="error"
@@ -1156,7 +1624,6 @@ function closeDrawer() {
                       <label
                         >DWG or Specification <span class="req">*</span></label
                       >
-
                       <!-- DWG -->
                       <div class="attach-wrap">
                         <label
@@ -1200,7 +1667,6 @@ function closeDrawer() {
                             @change="onFileChange($event, item, 'attachDWG')"
                           />
                         </label>
-                        <!-- ✅ ปุ่มลบ — แสดงเฉพาะมีไฟล์ -->
                         <button
                           v-if="item.attachDWG"
                           class="attach-remove"
@@ -1210,7 +1676,6 @@ function closeDrawer() {
                           <i class="pi pi-trash"></i>
                         </button>
                       </div>
-
                       <!-- Spec -->
                       <div class="attach-wrap">
                         <label
@@ -1245,7 +1710,6 @@ function closeDrawer() {
                             @change="onFileChange($event, item, 'attachSpec')"
                           />
                         </label>
-
                         <button
                           v-if="item.attachSpec"
                           class="attach-remove"
@@ -1255,7 +1719,6 @@ function closeDrawer() {
                           <i class="pi pi-trash"></i>
                         </button>
                       </div>
-
                       <!-- Last Quotation -->
                       <div class="attach-wrap">
                         <label
@@ -1304,7 +1767,6 @@ function closeDrawer() {
                           <i class="pi pi-trash"></i>
                         </button>
                       </div>
-
                       <!-- ETC -->
                       <div class="attach-wrap">
                         <label
@@ -1348,8 +1810,6 @@ function closeDrawer() {
                           <i class="pi pi-trash"></i>
                         </button>
                       </div>
-
-                      <!-- ✅ Message อยู่นอก attach-grid -->
                       <Message
                         v-if="errors[`items[${index}].attachDWG`]"
                         severity="error"
@@ -1360,14 +1820,22 @@ function closeDrawer() {
                       </Message>
                     </div>
 
+                    <!-- ✅ แสดง email จาก auth store -->
                     <div class="field stagger-12">
                       <label>User / Engineer / Sale</label>
-                      <div class="inp-auto">Database · From Email User</div>
+                      <div class="inp-auto inp-auto--email">
+                        <i
+                          class="pi pi-user"
+                          style="font-size: 11px; opacity: 0.6"
+                        ></i>
+                        {{ auth.user?.email ?? "—" }}
+                      </div>
                     </div>
                   </div>
 
                   <div class="col-divider" />
 
+                  <!-- ══ RIGHT COL: Product Specification ══ -->
                   <div class="form-col">
                     <div class="col-label">
                       <svg
@@ -1388,13 +1856,43 @@ function closeDrawer() {
                     <div class="field-row stagger-1">
                       <div class="field field-auto">
                         <label>Req Date</label>
-                        <div class="inp-auto">Auto · System Date</div>
+                        <div class="inp-auto">
+                          {{
+                            new Date().toLocaleDateString("th-TH", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                            })
+                          }}
+                        </div>
                       </div>
                       <div class="field">
-                        <label>Type <span class="req">*</span></label>
+                        <label>
+                          Type <span class="req">*</span>
+                          <i
+                            v-if="typeCodeHint(item)"
+                            class="pi pi-question-circle type-hint-icon"
+                            :title="typeCodeHint(item)"
+                          ></i>
+                        </label>
+
+                        <!-- Locked: ใช้ logic เดิม ไม่เกี่ยวกับ code hint -->
+                        <div
+                          v-if="isTypeLocked"
+                          class="inp-auto inp-auto--locked"
+                        >
+                          <i
+                            class="pi pi-lock"
+                            style="font-size: 11px; opacity: 0.7"
+                          ></i>
+                          {{ prefilledType }}
+                        </div>
+
+                        <!-- Unlocked fallback -->
                         <select
+                          v-else
                           v-model="item.type"
-                          @change="clearError(index, 'type')"
+                          @change="onTypeChange(item, index)"
                           class="inp"
                           :class="{
                             'inp-error': errors[`items[${index}].type`],
@@ -1409,6 +1907,7 @@ function closeDrawer() {
                             {{ t }}
                           </option>
                         </select>
+
                         <Message
                           v-if="errors[`items[${index}].type`]"
                           severity="error"
@@ -1420,10 +1919,13 @@ function closeDrawer() {
                       </div>
                     </div>
 
-                    <div class="field stagger-2">
-                      <label
-                        >Specification / Purity<span class="req">*</span></label
-                      >
+                    <div
+                      class="field stagger-2"
+                      :class="{
+                        'field-closed': !isFieldOpen(item, 'specPurity'),
+                      }"
+                    >
+                      <label>Specification / Purity</label>
                       <input
                         v-model="item.specPurity"
                         @input="clearError(index, 'specPurity')"
@@ -1431,10 +1933,14 @@ function closeDrawer() {
                         class="inp"
                         maxlength="100"
                         placeholder="e.g. 99.999%"
+                        :disabled="!isFieldOpen(item, 'specPurity')"
                         :class="{
                           'inp-error': errors[`items[${index}].specPurity`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Spec / Purity</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].specPurity`]"
                         severity="error"
@@ -1445,8 +1951,13 @@ function closeDrawer() {
                       </Message>
                     </div>
 
-                    <div class="field stagger-3">
-                      <label>Cylinder Type<span class="req">*</span></label>
+                    <div
+                      class="field stagger-3"
+                      :class="{
+                        'field-closed': !isFieldOpen(item, 'cylinderType'),
+                      }"
+                    >
+                      <label>Cylinder Type</label>
                       <input
                         v-model="item.cylinderType"
                         @input="clearError(index, 'cylinderType')"
@@ -1454,10 +1965,14 @@ function closeDrawer() {
                         class="inp"
                         maxlength="100"
                         placeholder="Cylinder type"
+                        :disabled="!isFieldOpen(item, 'cylinderType')"
                         :class="{
                           'inp-error': errors[`items[${index}].cylinderType`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Cylinder type</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].cylinderType`]"
                         severity="error"
@@ -1476,12 +1991,12 @@ function closeDrawer() {
                           @input="clearError(index, 'quantity')"
                           type="number"
                           class="inp"
-                          :class="{
-                            'inp-error': errors[`items[${index}].quantity`],
-                          }"
                           placeholder="0"
                           min="1"
                           step="1"
+                          :class="{
+                            'inp-error': errors[`items[${index}].quantity`],
+                          }"
                         />
                         <Message
                           v-if="errors[`items[${index}].quantity`]"
@@ -1503,7 +2018,6 @@ function closeDrawer() {
                           }"
                         >
                           <option value="">— Select Uom —</option>
-
                           <option
                             v-for="u in categoryUomMap"
                             :key="u.value"
@@ -1523,8 +2037,13 @@ function closeDrawer() {
                       </div>
                     </div>
 
-                    <div class="field stagger-5">
-                      <label>Cylinder Size (L)<span class="req">*</span></label>
+                    <div
+                      class="field stagger-5"
+                      :class="{
+                        'field-closed': !isFieldOpen(item, 'cylinderSize'),
+                      }"
+                    >
+                      <label>Cylinder Size (L)</label>
                       <input
                         v-model="item.cylinderSize"
                         @input="clearError(index, 'cylinderSize')"
@@ -1532,10 +2051,14 @@ function closeDrawer() {
                         class="inp"
                         maxlength="20"
                         placeholder="Size in litres"
+                        :disabled="!isFieldOpen(item, 'cylinderSize')"
                         :class="{
                           'inp-error': errors[`items[${index}].cylinderSize`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Cylinder Size</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].cylinderSize`]"
                         severity="error"
@@ -1546,8 +2069,13 @@ function closeDrawer() {
                       </Message>
                     </div>
 
-                    <div class="field stagger-6">
-                      <label>Maker / Source<span class="req">*</span></label>
+                    <div
+                      class="field stagger-6"
+                      :class="{
+                        'field-closed': !isFieldOpen(item, 'makerSource'),
+                      }"
+                    >
+                      <label>Maker / Source</label>
                       <input
                         v-model="item.makerSource"
                         @input="clearError(index, 'makerSource')"
@@ -1555,10 +2083,14 @@ function closeDrawer() {
                         class="inp"
                         maxlength="150"
                         placeholder="Manufacturer or source"
+                        :disabled="!isFieldOpen(item, 'makerSource')"
                         :class="{
                           'inp-error': errors[`items[${index}].makerSource`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Maker / Source</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].makerSource`]"
                         severity="error"
@@ -1569,10 +2101,13 @@ function closeDrawer() {
                       </Message>
                     </div>
 
-                    <div class="field stagger-7">
-                      <label
-                        >Required Type Valve<span class="req">*</span></label
-                      >
+                    <div
+                      class="field stagger-7"
+                      :class="{
+                        'field-closed': !isFieldOpen(item, 'requiredValve'),
+                      }"
+                    >
+                      <label>Required Type Valve</label>
                       <input
                         v-model="item.requiredValve"
                         @input="clearError(index, 'requiredValve')"
@@ -1580,11 +2115,14 @@ function closeDrawer() {
                         class="inp"
                         maxlength="100"
                         placeholder="Valve type"
+                        :disabled="!isFieldOpen(item, 'requiredValve')"
                         :class="{
                           'inp-error': errors[`items[${index}].requiredValve`],
                         }"
                       />
-
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Required Valve</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].requiredValve`]"
                         severity="error"
@@ -1595,22 +2133,40 @@ function closeDrawer() {
                       </Message>
                     </div>
 
-                    <div class="field stagger-8">
-                      <label
-                        >Purpose / Application<span class="req">*</span></label
-                      >
-                      <input
+                    <div
+                      class="field stagger-8"
+                      :class="{
+                        'field-closed': !isFieldOpen(
+                          item,
+                          'purposeApplication',
+                        ),
+                      }"
+                    >
+                      <label>Purpose / Application</label>
+
+                      <select
                         v-model="item.purposeApplication"
-                        @input="clearError(index, 'purposeApplication')"
-                        type="text"
+                        @change="clearError(index, 'purposeApplication')"
                         class="inp"
-                        maxlength="300"
-                        placeholder="Purpose or application"
+                        :disabled="!isFieldOpen(item, 'purposeApplication')"
                         :class="{
                           'inp-error':
                             errors[`items[${index}].purposeApplication`],
                         }"
-                      />
+                      >
+                        <option value="">— Select Purpose —</option>
+                        <option
+                          v-for="u in categoryPurposeMap"
+                          :key="u.value"
+                          :value="u.value"
+                        >
+                          {{ u.label }}
+                        </option>
+                      </select>
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Purpose /
+                        Application</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].purposeApplication`]"
                         severity="error"
@@ -1624,8 +2180,13 @@ function closeDrawer() {
                       </Message>
                     </div>
 
-                    <div class="field stagger-9">
-                      <label>Customer<span class="req">*</span></label>
+                    <div
+                      class="field stagger-9"
+                      :class="{
+                        'field-closed': !isFieldOpen(item, 'customer'),
+                      }"
+                    >
+                      <label>Customer</label>
                       <input
                         v-model="item.customer"
                         @input="clearError(index, 'customer')"
@@ -1633,10 +2194,14 @@ function closeDrawer() {
                         class="inp"
                         maxlength="150"
                         placeholder="Customer name"
+                        :disabled="!isFieldOpen(item, 'customer')"
                         :class="{
                           'inp-error': errors[`items[${index}].customer`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Customer</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].customer`]"
                         severity="error"
@@ -1647,10 +2212,13 @@ function closeDrawer() {
                       </Message>
                     </div>
 
-                    <div class="field stagger-10">
-                      <label
-                        >Address / Location<span class="req">*</span></label
-                      >
+                    <div
+                      class="field stagger-10"
+                      :class="{
+                        'field-closed': !isFieldOpen(item, 'addressLocation'),
+                      }"
+                    >
+                      <label>Address / Location</label>
                       <input
                         v-model="item.addressLocation"
                         @input="clearError(index, 'addressLocation')"
@@ -1658,11 +2226,16 @@ function closeDrawer() {
                         class="inp"
                         maxlength="300"
                         placeholder="Delivery address"
+                        :disabled="!isFieldOpen(item, 'addressLocation')"
                         :class="{
                           'inp-error':
                             errors[`items[${index}].addressLocation`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Address /
+                        Location</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].addressLocation`]"
                         severity="error"
@@ -1676,11 +2249,7 @@ function closeDrawer() {
                     </div>
 
                     <div class="field stagger-11">
-                      <label
-                        >Recommend Vendor / Brand<span class="req"
-                          >*</span
-                        ></label
-                      >
+                      <label>Recommend Vendor / Brand</label>
                       <input
                         v-model="item.recommendVendor"
                         @input="clearError(index, 'recommendVendor')"
@@ -1693,6 +2262,10 @@ function closeDrawer() {
                             errors[`items[${index}].recommendVendor`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — เว้นว่างได้ถ้ายังไม่มี Recommend
+                        Vendor</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].recommendVendor`]"
                         severity="error"
@@ -1706,18 +2279,22 @@ function closeDrawer() {
                     </div>
 
                     <div class="field stagger-12">
-                      <label>Remark<span class="req">*</span></label>
+                      <label>Remark</label>
                       <textarea
                         v-model="item.remark"
                         @input="clearError(index, 'remark')"
                         class="inp inp-textarea"
                         maxlength="500"
                         rows="3"
-                        placeholder="Additional remarks..."
+                        placeholder="Additional remarks... (ไม่บังคับ)"
                         :class="{
                           'inp-error': errors[`items[${index}].remark`],
                         }"
                       />
+                      <span class="field-hint"
+                        >ไม่บังคับ — ถ้ากรอก: ไม่เกิน 500 ตัวอักษร ห้ามใช้ @ ~ $
+                        ^ `</span
+                      >
                       <Message
                         v-if="errors[`items[${index}].remark`]"
                         severity="error"
@@ -1728,16 +2305,20 @@ function closeDrawer() {
                       </Message>
                     </div>
 
+                    <!-- ✅ Buyer label เปลี่ยนเป็น "Wait Purchase Accept" -->
                     <div class="field stagger-12">
                       <label>Buyer</label>
                       <div class="inp-auto">
-                        Database · From Email PUR Accept
+                        <i
+                          class="pi pi-clock"
+                          style="font-size: 11px; opacity: 0.6"
+                        ></i>
+                        Wait Purchase Accept
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Divider ระหว่าง items -->
                 <div v-if="index < items.length - 1" class="item-divider" />
               </div>
             </div>
@@ -1812,6 +2393,7 @@ function closeDrawer() {
   right: 0;
   bottom: 0;
   width: 100%;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: color-mix(
@@ -1829,7 +2411,6 @@ function closeDrawer() {
   border-left-color: rgba(0, 0, 0, 0.08);
   box-shadow: -16px 0 60px rgba(0, 0, 0, 0.12);
 }
-
 .drawer-slide-enter-active {
   animation: slideInFromRight 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -1928,7 +2509,6 @@ function closeDrawer() {
 .pipeline-track {
   display: flex;
   align-items: center;
-  gap: 0;
   min-width: max-content;
 }
 .pipe-step {
@@ -1962,7 +2542,6 @@ function closeDrawer() {
   font-size: 11px;
   font-weight: 700;
 }
-
 .status-done .pipe-node {
   background: rgba(16, 185, 129, 0.2);
   border: 1.5px solid rgba(16, 185, 129, 0.4);
@@ -1971,7 +2550,6 @@ function closeDrawer() {
 .status-done .pipe-label {
   color: #34d399;
 }
-
 .status-active .pipe-node {
   background: var(--accent-dim, rgba(56, 163, 245, 0.2));
   border: 2px solid var(--accent, #38a3f5);
@@ -1982,7 +2560,6 @@ function closeDrawer() {
   color: var(--accent, #38a3f5);
   font-weight: 700;
 }
-
 .status-pending .pipe-node {
   background: rgba(255, 255, 255, 0.05);
   border: 1.5px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
@@ -1991,7 +2568,6 @@ function closeDrawer() {
 .status-pending .pipe-label {
   color: var(--text-muted, rgba(255, 255, 255, 0.3));
 }
-
 .pipe-pulse {
   width: 8px;
   height: 8px;
@@ -2010,7 +2586,6 @@ function closeDrawer() {
     opacity: 0.7;
   }
 }
-
 .pipe-arrow {
   flex: 1;
   display: flex;
@@ -2024,11 +2599,9 @@ function closeDrawer() {
   color: rgba(52, 211, 153, 0.5);
 }
 
-/* ══════════════════════════════════════
-   FORM BODY
-══════════════════════════════════════ */
 .drawer-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 20px 24px;
   scrollbar-width: thin;
@@ -2042,6 +2615,19 @@ function closeDrawer() {
   border-radius: 4px;
 }
 
+.type-lock-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--accent);
+  background: var(--border-subtle);
+  border: 1px dashed var(--bg-surface);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1px 1fr;
@@ -2049,14 +2635,12 @@ function closeDrawer() {
 }
 .col-divider {
   background: var(--border-subtle, rgba(255, 255, 255, 0.07));
-  margin: 0;
 }
 .form-col {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
-
 .col-label {
   display: flex;
   align-items: center;
@@ -2082,7 +2666,6 @@ function closeDrawer() {
   margin-bottom: 12px;
   animation: fadeUpIn 0.35s ease both;
 }
-
 .stagger-1 {
   animation-delay: 0.08s;
 }
@@ -2119,7 +2702,6 @@ function closeDrawer() {
 .stagger-12 {
   animation-delay: 0.41s;
 }
-
 @keyframes fadeUpIn {
   from {
     opacity: 0;
@@ -2166,23 +2748,21 @@ function closeDrawer() {
 .inp::placeholder {
   color: var(--text-muted, rgba(255, 255, 255, 0.25));
 }
-
+.inp-textarea {
+  resize: vertical;
+  min-height: 72px;
+}
 select.inp {
   height: 37px;
   padding: 0 11px;
   appearance: none;
   -webkit-appearance: none;
-
-  background-repeat: no-repeat;
-  background-position: right 10px center;
   padding-right: 30px;
 }
-
 select.inp option {
   background: var(--bg-base, #060c18);
   color: var(--text-primary, #fff);
 }
-
 [data-theme="light"] .inp {
   background: #f5f7fc;
   border-color: rgba(0, 0, 0, 0.1);
@@ -2199,15 +2779,38 @@ select.inp option {
   color: #08174a;
 }
 
-.inp-textarea {
-  resize: vertical;
-  min-height: 72px;
+.inp:disabled,
+select.inp:disabled {
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02);
+  border-style: dashed;
+  color: var(--text-muted, rgba(255, 255, 255, 0.25));
+  opacity: 0.55;
+}
+[data-theme="light"] .inp:disabled,
+[data-theme="light"] select.inp:disabled {
+  background: rgba(0, 0, 0, 0.03);
+  color: #b0b8cc;
+}
+
+.field-closed {
+  opacity: 0.55;
+}
+.field-closed label {
+  color: var(--text-muted, rgba(255, 255, 255, 0.25));
+}
+:deep(.field-closed .p-select) {
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-style: dashed !important;
+  opacity: 0.7;
 }
 
 .inp-auto {
   height: 37px;
   display: flex;
   align-items: center;
+  gap: 6px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px dashed var(--border-subtle, rgba(255, 255, 255, 0.09));
   border-radius: 8px;
@@ -2216,10 +2819,21 @@ select.inp option {
   padding: 8px 11px;
   font-style: italic;
 }
+.inp-auto--email {
+  font-style: normal;
+  color: var(--accent, #38a3f5);
+  border-color: var(--accent-glow, rgba(56, 163, 245, 0.25));
+  background: var(--accent-dim, rgba(56, 163, 245, 0.06));
+}
+
 [data-theme="light"] .inp-auto {
   background: rgba(0, 0, 0, 0.03);
   border-color: rgba(0, 0, 0, 0.08);
   color: #8892a4;
+}
+[data-theme="light"] .inp-auto--email {
+  color: var(--accent);
+  background: var(--accent-dim);
 }
 
 .field-hint {
@@ -2231,51 +2845,15 @@ select.inp option {
 .field-auto {
   flex: 1;
 }
-.mt-6 {
-  margin-top: 6px;
+.req {
+  color: #f87171;
+  margin-left: 2px;
+}
+.inp-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
 }
 
-.radio-group {
-  display: flex;
-  gap: 8px;
-}
-.radio-opt {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.09));
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 12.5px;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.65));
-  transition: all 0.18s;
-  user-select: none;
-}
-.radio-opt input[type="radio"] {
-  display: none;
-}
-.radio-opt.active {
-  background: var(--accent-dim, rgba(56, 163, 245, 0.12));
-  border-color: var(--border-accent, rgba(56, 163, 245, 0.3));
-  color: var(--accent, #38a3f5);
-}
-[data-theme="light"] .radio-opt {
-  background: #f5f7fc;
-  border-color: rgba(0, 0, 0, 0.1);
-  color: #374151;
-}
-[data-theme="light"] .radio-opt.active {
-  background: var(--accent-dim);
-  color: var(--accent);
-}
-
-.attach-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 7px;
-}
 .attach-btn {
   display: flex;
   align-items: center;
@@ -2298,10 +2876,60 @@ select.inp option {
 .file-hidden {
   display: none;
 }
+.attach-btn-error {
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  color: #f87171 !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+.attach-btn-done {
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-style: solid !important;
+}
+.attach-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.attach-wrap .attach-btn {
+  flex: 1;
+  padding-right: 28px;
+  overflow: hidden;
+}
+.attach-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.attach-remove {
+  position: absolute;
+  right: 6px;
+  top: 45%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 28px;
+  border-radius: 25%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s;
+  flex-shrink: 0;
+  z-index: 1;
+}
+.attach-remove:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #fff;
+}
 
-/* ══════════════════════════════════════
-   FOOTER
-══════════════════════════════════════ */
 .drawer-footer {
   display: flex;
   align-items: center;
@@ -2334,7 +2962,6 @@ select.inp option {
   display: flex;
   gap: 8px;
 }
-
 .footer-btn-ghost {
   padding: 9px 18px;
   border-radius: 9px;
@@ -2351,7 +2978,6 @@ select.inp option {
   background: rgba(255, 255, 255, 0.06);
   color: var(--text-primary, #fff);
 }
-
 .footer-btn-outline {
   padding: 9px 18px;
   border-radius: 9px;
@@ -2367,7 +2993,11 @@ select.inp option {
 .footer-btn-outline:hover {
   background: var(--accent-dim, rgba(56, 163, 245, 0.1));
 }
-
+.footer-btn-outline:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 .footer-btn-primary {
   padding: 9px 22px;
   border-radius: 9px;
@@ -2392,7 +3022,10 @@ select.inp option {
   transform: translateY(-1px);
   box-shadow: 0 6px 20px var(--accent-glow, rgba(56, 163, 245, 0.4));
 }
-
+.footer-btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 [data-theme="light"] .footer-btn-ghost {
   border-color: rgba(0, 0, 0, 0.12);
   color: #6b7280;
@@ -2401,6 +3034,7 @@ select.inp option {
   background: rgba(0, 0, 0, 0.04);
   color: #374151;
 }
+
 .item-block {
   margin-bottom: 8px;
 }
@@ -2446,11 +3080,6 @@ select.inp option {
   background: var(--border-subtle, rgba(255, 255, 255, 0.06));
   margin: 24px 0;
 }
-.footer-btn-outline:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  pointer-events: none;
-}
 
 .inp-datepicker {
   width: 100%;
@@ -2482,17 +3111,6 @@ select.inp option {
   border-radius: 0 8px 8px 0;
   color: var(--accent, #38a3f5);
 }
-
-.inp-error {
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
-}
-
-.req {
-  color: #f87171;
-  margin-left: 2px;
-}
-
 :deep(.p-message.p-message-error) {
   background: transparent;
   border: none;
@@ -2501,70 +3119,6 @@ select.inp option {
   font-size: 11px;
 }
 
-/* แต่ละปุ่มแดง */
-.attach-btn-error {
-  border-color: rgba(239, 68, 68, 0.6) !important;
-  color: #f87171 !important;
-  background: rgba(239, 68, 68, 0.08) !important;
-}
-
-/* แนบไฟล์แล้ว — เขียว */
-.attach-btn-done {
-  border-color: rgba(16, 185, 129, 0.5) !important;
-  color: #34d399 !important;
-  background: rgba(16, 185, 129, 0.08) !important;
-  border-style: solid !important;
-}
-
-/* ครอบ label + ปุ่มลบ */
-.attach-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.attach-wrap .attach-btn {
-  flex: 1;
-  /* ✅ เพิ่ม padding-right เผื่อปุ่มลบ */
-  padding-right: 28px;
-  overflow: hidden;
-}
-
-.attach-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
-
-/* ปุ่ม ✕ */
-.attach-remove {
-  position: absolute;
-  right: 6px;
-  top: 45%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 30px;
-  border-radius: 50%;
-  background: transparent;
-  border: 1px solid transparent;
-  color: #f87171;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.18s;
-  flex-shrink: 0;
-  z-index: 1;
-}
-.attach-remove:hover {
-  background: rgba(239, 68, 68, 0.3);
-  border-color: rgba(239, 68, 68, 0.6);
-  color: #fff;
-}
-
-/* Override PrimeVue Select ให้เข้า theme */
 :deep(.gl-select) {
   width: 100%;
 }
@@ -2602,7 +3156,6 @@ select.inp option {
   color: var(--accent, #38a3f5);
 }
 
-/* GL option layout */
 .gl-option {
   display: flex;
   align-items: center;
@@ -2625,87 +3178,12 @@ select.inp option {
   color: var(--text-muted, rgba(255, 255, 255, 0.3));
   font-size: 13px;
 }
-
-.field-error {
-  font-size: 11px;
-  color: #f87171;
-  margin: 3px 0 0;
-  padding: 0;
-}
-
-.inp-view {
-  min-height: 37px;
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07));
-  border-radius: 8px;
-  color: var(--text-primary, #fff);
-  font-size: 13px;
-  padding: 8px 11px;
-}
-
-.meta-bar {
-  display: flex;
-  gap: 20px;
-  padding: 10px 0 16px;
-  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07));
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
+.type-hint-icon {
+  margin-left: 4px;
   color: var(--text-muted, rgba(255, 255, 255, 0.4));
+  cursor: help;
 }
-.meta-item i {
+.type-hint-icon:hover {
   color: var(--accent, #38a3f5);
-}
-
-.attach-list {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 4px;
-}
-.attach-link {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: var(--accent-dim, rgba(56, 163, 245, 0.1));
-  border: 1px solid var(--border-accent, rgba(56, 163, 245, 0.25));
-  color: var(--accent, #38a3f5);
-  font-size: 12px;
-  text-decoration: none;
-  transition: all 0.18s;
-}
-.attach-link:hover {
-  background: var(--accent-dim, rgba(56, 163, 245, 0.2));
-}
-.no-attach {
-  font-size: 12px;
-  color: var(--text-muted, rgba(255, 255, 255, 0.3));
-  font-style: italic;
-}
-
-.lead-time-field {
-  margin-top: 8px;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--accent-dim, rgba(56, 163, 245, 0.06));
-  border: 1px solid var(--border-accent, rgba(56, 163, 245, 0.2));
-}
-
-.loading-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  justify-content: center;
-  padding: 60px 0;
-  color: var(--text-muted, rgba(255, 255, 255, 0.4));
 }
 </style>

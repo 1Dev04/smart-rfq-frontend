@@ -1,5 +1,25 @@
-# Vue 3 + Vite
-
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
-
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+# Build SmartRFQ Project (Update: 6/2026 - 9/2026 )
+--
+## Frontend
+    - Vue.js + Vite
+    - UI Library: PrimeVue 
+## Backend 
+    - .NET 8 / .NET Core (ASP.NET Core Web API)
+    - API Documentation: Swagger UI
+## Infrastructure 
+    - Cloud Providers: Microsoft 365, Microsoft Azure
+    - Identity Provider: Microsoft Entra ID (OIDC / OAuth 2.0)
+## Authentication & Authorization
+    - Session Management: Cookie-based (Session ID, Access Token)
+    - Authentication: OAuth 2.0 Middleware
+## Cloud Storage & Databases
+    - File/Image Storage: Cloudinary
+    - Database: Neon (Serverless PostgreSQL)
+## DevOps & Hosting
+    - Frontend Hosting: Netlify
+    - Backend Hosting: Render
+    - CI/CD Pipeline: Jenkins
+## AI & LLM Integration
+    - Google AI Studio (Model: Gemini 3.5 Flash-Lite)
+## Unstructured Data 
+    - Email Parsing & Processing

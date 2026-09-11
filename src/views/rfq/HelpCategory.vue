@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
 import { computed, ref } from "vue";
 import AppLayout from "../../layouts/AppLayout.vue";
 import CategoryCard from "../../components/help/CategoryCard.vue";
@@ -206,4 +206,4 @@ const categories = ref([
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 14px;
 }
-</style>
+</style> -->

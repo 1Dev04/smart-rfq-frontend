@@ -1,32 +1,98 @@
 <script setup>
-import { nextTick, ref, watch } from "vue";
+import { nextTick, ref, watch, computed } from "vue";
+import { useAuthStore } from "../../stores/auth";
 import { useToast } from "primevue/usetoast";
 import { useRFQDrawerStore } from "../../stores/rfqDrawer";
+import RejectDocumentPurchase from "../../views/rfq/RejectDocumentPurchase.vue";
 import { apiFetch } from "../../utils/api";
 
 const drawer = useRFQDrawerStore();
 const toast = useToast();
-const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
-
-// ── Vendor Email Modal ──────────────────────────────────
-const showEmailModal = ref(false)
-const vendorEmails   = ref([''])
-const isSending      = ref(false)
+const BASE = `${import.meta.env.VITE_API_URL}`;
+const auth = useAuthStore();
 
 const isLoading = ref(false);
 const isSubmitting = ref(false);
 const doc = ref(null);
 const leadTimes = ref({});
+const showRejectModal = ref(false);
+const isRejectedPending = computed(() => doc.value?.status === "reject");
 
+const headerTitle = computed(() => {
+  const raw = (doc.value?.status ?? doc.value?.Status ?? "") + "";
+  const s = raw.toString().trim().toLowerCase();
+  if (s === "reject") return "Reject Document";
+  if (s === "cancel" || s === "cancelled" || s === "canceled")
+    return "Cancelled Document";
+  if (s === "user_pending" || s === "pending") return "Pending Document";
+  if (s === "cost_saving") return "Cost Saving";
+  return "Purchase Accept";
+});
+
+
+const isAlreadyAccepted = computed(() =>
+  doc.value?.status === "waiting_quotation",
+);
+const isConfirmingWaiting = ref(false);
+
+async function handleConfirmWaitingQuotation() {
+  if (!doc.value?.items?.length) return;
+  isConfirmingWaiting.value = true;
+  try {
+    const payload = {
+      items: doc.value.items.map((item) => ({
+        itemId: item.id,
+        emails: [],
+      })),
+    };
+
+    const res = await apiFetch(
+      `${BASE}/api/doc-request/${drawer.docRequestId}/send-quotation-email`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      toast.add({
+        severity: "error",
+        summary: "ดำเนินการไม่สำเร็จ",
+        detail: body.message ?? `HTTP ${res.status}`,
+        life: 6000,
+      });
+      return;
+    }
+
+    toast.add({
+      severity: "success",
+      summary: "สำเร็จ",
+      detail: "เข้าสู่ขั้นตอน Waiting Quotation แล้ว",
+      life: 4000,
+    });
+    drawer.closeDrawer();
+  } catch (err) {
+    toast.add({
+      severity: "error",
+      summary: "Network error",
+      detail: err.message,
+      life: 6000,
+    });
+  } finally {
+    isConfirmingWaiting.value = false;
+  }
+}
 
 const allSteps = [
-  { id: "user_fill",         label: "User Fill\nData (Draft)" },
-  { id: "purchase_accept",   label: "Purchase\nAccept" },
-  { id: "waiting_quotation", label: "Waiting\nQuotation" },  
-  { id: "purchase_compare",  label: "Purchase\nCompare" },
-  { id: "user_confirm",      label: "User\nConfirm" },
-  { id: "purchase_confirm",  label: "Purchase\nConfirm" },
-  { id: "finish",            label: "Finish" },
+  { id: "user_pending", label: "User \nPending" },
+  { id: "purchase_accept", label: "Purchase\nAccept" },
+  { id: "waiting_quotation", label: "Waiting\nQuotation" },
+  { id: "purchase_compare", label: "Purchase\nCompare" },
+  { id: "user_confirm", label: "User\nConfirm" },
+  { id: "cost_saving", label: "Cost\nSaving" },
+  { id: "purchase_confirm", label: "Purchase\nConfirm" },
+  { id: "finish", label: "Finish" },
 ];
 
 function statusLabel(statusId) {
@@ -39,33 +105,32 @@ function statusLabel(statusId) {
 function stepStatus(stepId) {
   if (!doc.value) return "pending";
   const order = allSteps.map((s) => s.id);
-  const cur = order.indexOf(doc.value.status);
-  const idx = order.indexOf(stepId);
-  
-  if (cur === -1) return "pending";
-  if (idx <= cur) return "done";       
-  if (idx === cur + 1) return "active"; 
-  return "pending";
-}
+  const raw = (doc.value.status ?? doc.value.Status ?? "")
+    .toString()
+    .trim()
+    .toLowerCase();
 
-function addEmailField() { vendorEmails.value.push('')}
-function removeEmail(i) { vendorEmails.value.splice(i, 1)}
-
-async function openPurchaseDrawer(docRequestId) {
-  // ดึง status จาก row ที่คลิก
-  const row = allRows.value.find(r => r.docRequestId === docRequestId)
-  const status = row?.status
-
-  const roleMap = {
-    purchase_accept:   'purchase',
-    waiting_quotation: 'waiting',
-    // เพิ่ม state ต่อไปได้
+  if (raw === "cancel" || raw === "cancelled" || raw === "canceled") {
+    return "cancelled";
   }
-  const drawerRole = roleMap[status] ?? (auth.role === 'purchaser' ? 'purchase' : auth.role)
 
-  drawer.closeDrawer()
-  await nextTick()
-  drawer.openDrawer(drawerRole, null, docRequestId)
+  const effectiveStatus = raw === "reject" ? "user_pending" : raw;
+  const cur = order.indexOf(effectiveStatus);
+  const idx = order.indexOf(stepId);
+
+  if (cur === -1) return "pending";
+
+  const activeIdx = raw === "user_pending" ? cur + 1 : cur;
+
+  if (idx < cur) return "done";
+  if (idx === cur) {
+    if (raw === "reject") return "rejected";
+    if (raw === "user_pending") return "done";
+  }
+  if (idx === activeIdx && raw === "user_pending") return "active";
+  if (idx === cur && raw !== "user_pending" && raw !== "reject") return "active";
+
+  return "pending";
 }
 
 // Helper
@@ -113,6 +178,15 @@ watch(
   { immediate: true },
 );
 
+function onRejected(payload) {
+  if (doc.value) {
+    doc.value.status = payload.status;
+    doc.value.revNo = payload.newRev ?? doc.value.revNo;
+  }
+
+  drawer.closeDrawer();
+}
+
 async function handleAccept() {
   isSubmitting.value = true;
   try {
@@ -144,6 +218,7 @@ async function handleAccept() {
       detail: "RFQ accepted and moved to next step.",
       life: 4000,
     });
+
     drawer.closeDrawer();
   } catch (err) {
     toast.add({
@@ -157,28 +232,64 @@ async function handleAccept() {
   }
 }
 
-async function handleReject() {
+async function handleCancel() {
+  if (!drawer.docRequestId) {
+    drawer.closeDrawer();
+    return;
+  }
+
+  const isOwner =
+    auth.user?.email &&
+    doc.value?.requesterEmail &&
+    auth.user.email === doc.value.requesterEmail;
+  if (!isOwner) {
+    drawer.closeDrawer();
+    return;
+  }
+
   isSubmitting.value = true;
   try {
-    const res = await apiFetch(`${BASE}/api/doc-request/reject`, {
-      method: "POST",
-      body: JSON.stringify({ id: drawer.docRequestId }),
-    });
+    const res = await apiFetch(
+      `${BASE}/api/doc-request/${drawer.docRequestId}/cancel`,
+      {
+        method: "POST",
+        body: JSON.stringify({ reason: null }),
+      },
+    );
+
+    if (res.status === 401) {
+      toast.add({
+        severity: "error",
+        summary: "Session expired",
+        detail: "Please log in again.",
+        life: 5000,
+      });
+      return;
+    }
+    if (res.status === 403) {
+      toast.add({
+        severity: "error",
+        summary: "ไม่มีสิทธิ์",
+        detail: "คุณไม่มีสิทธิ์ยกเลิก RFQ นี้",
+        life: 5000,
+      });
+      return;
+    }
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       toast.add({
         severity: "error",
-        summary: "Reject failed",
-        detail: body.message,
+        summary: "Cancel failed",
+        detail: body.message ?? `HTTP ${res.status}`,
         life: 6000,
       });
       return;
     }
 
     toast.add({
-      severity: "warn",
-      summary: "Rejected",
-      detail: "RFQ rejected and returned to requester.",
+      severity: "success",
+      summary: "Cancelled",
+      detail: "RFQ ถูกยกเลิกเรียบร้อย",
       life: 4000,
     });
     drawer.closeDrawer();
@@ -210,7 +321,7 @@ async function handleReject() {
               <div class="pur-header-left">
                 <div class="pur-badge">RFQ</div>
                 <div>
-                  <h2 class="pur-title">Purchase Accept</h2>
+                  <h2 class="pur-title">{{ headerTitle }}</h2>
                   <span class="pur-sub">
                     {{ doc?.rfqNo }} · {{ doc?.revNo }} ·
                     {{ doc?.items?.length ?? 0 }} Items
@@ -241,10 +352,24 @@ async function handleReject() {
                         <path
                           d="M2.5 7L5.5 10L11.5 4"
                           stroke="currentColor"
-                          stroke-width="2"
+                          stro-width="2"
                           stroke-linecap="round"
                         />
                       </svg>
+
+                      <svg
+                        v-else-if="stepStatus(step.id) === 'rejected'"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                      >
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
+
                       <span
                         v-else-if="stepStatus(step.id) === 'active'"
                         class="pur-pulse"
@@ -499,17 +624,11 @@ async function handleReject() {
 
                       <!-- Lead Time input -->
                       <div class="pur-leadtime">
-                        <label
-                          >Lead Time (วัน) <span class="pur-req">*</span></label
-                        >
-                        <input
-                          v-model="leadTimes[item.id]"
-                          type="number"
-                          class="pur-input"
-                          min="1"
-                          step="1"
-                          placeholder="จำนวนวัน"
-                        />
+                        <label>Duration Day </label>
+                        <div class="pur-view">
+                          {{ leadTimes[item.id] ?? "-" }}
+                        </div>
+
                         <span v-if="leadTimes[item.id]" class="pur-hint">
                           Purchase ต้องเริ่มดำเนินการภายใน:
                           <strong>{{
@@ -540,6 +659,37 @@ async function handleReject() {
               </template>
             </div>
 
+            <div v-if="isRejectedPending" class="pending-user-banner">
+              <i class="pi pi-hourglass"></i>
+              <div>
+                <strong>รอ Requester แก้ไขข้อมูล</strong>
+                <p>RFQ นี้ถูกตีกลับไปแล้ว กำลังรอผู้ขอแก้ไขและส่งกลับมาใหม่</p>
+                <p v-if="doc?.rejectReason" class="pending-reason">
+                  เหตุผล: {{ doc.rejectReason }}
+                </p>
+              </div>
+            </div>
+
+            <div v-if="isAlreadyAccepted" class="pending-user-banner">
+              <i class="pi pi-check-circle"></i>
+              <div class="pending-banner-text">
+                <strong>RFQ นี้ Accept ไปแล้ว</strong>
+                <p>กดยืนยันเพื่อส่งต่อไปยังขั้นตอน Waiting Quotation</p>
+              </div>
+              <button
+                class="pur-btn pur-btn--primary"
+                :disabled="isConfirmingWaiting"
+                @click="handleConfirmWaitingQuotation"
+              >
+                <i v-if="isConfirmingWaiting" class="pi pi-spin pi-spinner"></i>
+                {{
+                  isConfirmingWaiting
+                    ? "กำลังส่ง..."
+                    : "Confirm → Waiting Quotation"
+                }}
+              </button>
+            </div>
+
             <!-- Footer -->
             <div class="pur-footer">
               <div class="pur-footer-info">
@@ -553,25 +703,35 @@ async function handleReject() {
                 <button
                   class="pur-btn pur-btn--ghost"
                   :disabled="isSubmitting"
-                  @click="drawer.closeDrawer()"
+                  @click="handleCancel"
                 >
                   Cancel
                 </button>
                 <button
                   class="pur-btn pur-btn--outline"
-                  :disabled="isSubmitting"
-                  @click="handleReject"
+                  :disabled="
+                    isSubmitting || isRejectedPending || isAlreadyAccepted
+                  "
+                  @click="showRejectModal = true"
                 >
                   <i v-if="isSubmitting" class="pi pi-spin pi-spinner"></i>
                   Reject
                 </button>
+                <RejectDocumentPurchase
+                  v-model="showRejectModal"
+                  :doc-request-id="drawer.docRequestId"
+                  :rfq-no="doc?.rfqNo"
+                  @rejected="onRejected"
+                />
                 <button
                   class="pur-btn pur-btn--primary"
-                  :disabled="isSubmitting"
+                  :disabled="
+                    isSubmitting || isRejectedPending || isAlreadyAccepted
+                  "
                   @click="handleAccept"
                 >
                   <i v-if="isSubmitting" class="pi pi-spin pi-spinner"></i>
-                  Accept
+                  {{ isAlreadyAccepted ? "Accepted" : "Accept" }}
                 </button>
               </div>
             </div>
@@ -585,7 +745,6 @@ async function handleReject() {
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Sora:wght@600;700&display=swap");
 
-/* Overlay */
 .pur-overlay {
   position: fixed;
   inset: 0;
@@ -594,7 +753,6 @@ async function handleReject() {
   backdrop-filter: blur(5px);
 }
 
-/* Transitions */
 .drawer-fade-enter-active {
   transition: opacity 0.25s ease;
 }
@@ -633,7 +791,6 @@ async function handleReject() {
   }
 }
 
-/* Panel */
 .pur-panel {
   position: fixed;
   top: 0;
@@ -649,7 +806,6 @@ async function handleReject() {
   overflow: hidden;
 }
 
-/* Header */
 .pur-header {
   display: flex;
   align-items: center;
@@ -711,7 +867,6 @@ async function handleReject() {
   border-color: var(--resent-border);
 }
 
-/* Pipeline */
 .pur-pipeline {
   padding: 14px 24px;
   border-bottom: 1px solid var(--border-subtle);
@@ -755,7 +910,6 @@ async function handleReject() {
   font-weight: 700;
 }
 
-/* ─── Step states use status vars ─── */
 .pur-step--done .pur-node {
   background: var(--accept-bg);
   border: 1.5px solid var(--accept-border);
@@ -816,7 +970,6 @@ async function handleReject() {
   color: var(--accept-border);
 }
 
-/* Body */
 .pur-body {
   flex: 1;
   overflow-y: auto;
@@ -841,7 +994,6 @@ async function handleReject() {
   color: var(--text-muted);
 }
 
-/* Meta */
 .pur-meta {
   display: flex;
   gap: 20px;
@@ -861,7 +1013,6 @@ async function handleReject() {
   color: var(--accent);
 }
 
-/* Item block */
 .pur-item {
   margin-bottom: 8px;
 }
@@ -887,7 +1038,6 @@ async function handleReject() {
   margin: 24px 0;
 }
 
-/* Grid */
 .pur-grid {
   display: grid;
   grid-template-columns: 1fr 1px 1fr;
@@ -912,7 +1062,6 @@ async function handleReject() {
   border-bottom: 1px solid var(--border-subtle);
 }
 
-/* Fields */
 .pur-field {
   margin-bottom: 12px;
 }
@@ -943,7 +1092,6 @@ async function handleReject() {
   padding: 8px 11px;
 }
 
-/* Attachments */
 .pur-attach-list {
   display: flex;
   gap: 8px;
@@ -972,7 +1120,6 @@ async function handleReject() {
   font-style: italic;
 }
 
-/* Lead time */
 .pur-leadtime {
   margin-top: 8px;
   padding: 12px;
@@ -1019,7 +1166,6 @@ async function handleReject() {
   margin-top: 6px;
 }
 
-/* Footer */
 .pur-footer {
   display: flex;
   align-items: center;
@@ -1101,5 +1247,54 @@ async function handleReject() {
 .pur-btn--primary:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: var(--shadow);
+}
+
+.pending-user-banner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 24px;
+  background: var(--accent-glow);
+  border-bottom: 1px solid var(--accent-dim);
+  color: var(--orb-3);
+  font-size: 12.5px;
+}
+.pending-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+.pending-user-banner strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--accept);
+}
+.pending-user-banner p {
+  margin: 2px 0 0;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+.pending-reason {
+  font-style: italic;
+}
+
+.pur-step--rejected .pur-node {
+  background: var(--resent-bg);
+  border: 2px solid var(--resent-border, #ef4444);
+  color: var(--resent, #ef4444);
+  box-shadow: 0 0 0 4px var(--resent-bg);
+}
+.pur-step--rejected .pur-step-label {
+  color: var(--resent, #ef4444);
+  font-weight: 700;
+}
+
+.pur-step--cancelled .pur-node {
+  background: transparent;
+  border: 1.5px dashed var(--border-subtle);
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+.pur-step--cancelled .pur-step-label {
+  color: var(--text-muted);
+  opacity: 0.55;
 }
 </style>

@@ -42,12 +42,19 @@ useThemeStore();
 
 .desktop-only { display: none; }
 
-@media (max-width: 1023px) {
+@media screen and (max-width: 1023px) {
   .mobile-block  { display: flex; }
   .desktop-only  { display: none !important; }
 }
-@media (min-width: 1024px) {
+@media screen and (min-width: 1024px) {
   .mobile-block  { display: none; }
   .desktop-only  { display: block; }
 }
+
+@media print {
+  .mobile-block  { display: none !important; }
+  .desktop-only  { display: block !important; }
+}
+
+
 </style>

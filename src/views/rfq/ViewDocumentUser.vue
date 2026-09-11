@@ -6,17 +6,18 @@ import { apiFetch } from "../../utils/api";
 
 const drawer = useRFQDrawerStore();
 const toast = useToast();
-const BASE = `${import.meta.env.VITE_LOCAL_BACKEND}`;
+const BASE = `${import.meta.env.VITE_API_URL}`;
 
 const isLoading = ref(false);
 const doc = ref(null);
 
 const allSteps = [
-  { id: "user_fill", label: "User Fill\nData (Draft)" },
+  { id: "user_pending", label: "User \nPending" },
   { id: "purchase_accept", label: "Purchase\nAccept" },
-  { id: "waiting_quote", label: "Waiting\nQuotation" },
+  { id: "waiting_quotation", label: "Waiting\nQuotation" },
   { id: "purchase_compare", label: "Purchase\nCompare" },
   { id: "user_confirm", label: "User\nConfirm" },
+  { id: "cost_saving", label: "Cost\nSaving" },
   { id: "purchase_confirm", label: "Purchase\nConfirm" },
   { id: "finish", label: "Finish" },
 ];
@@ -24,12 +25,14 @@ const allSteps = [
 function stepStatus(stepId) {
   if (!doc.value) return "pending";
   const order = allSteps.map((s) => s.id);
-  const cur = order.indexOf(doc.value.status);
+  const raw = (doc.value.status ?? doc.value.Status ?? "").toString().trim().toLowerCase();
+  const effectiveStatus = raw === "reject" ? "user_pending" : raw;
+  const cur = order.indexOf(effectiveStatus);
   const idx = order.indexOf(stepId);
-  
+
   if (cur === -1) return "pending";
-  if (idx <= cur) return "done";       
-  if (idx === cur + 1) return "active"; 
+  if (idx < cur) return "done";
+  if (idx === cur) return "active";
   return "pending";
 }
 
@@ -65,7 +68,7 @@ watch(
   () => [drawer.docRequestId, drawer.showDrawer, drawer.drawerRole],
   async ([id, show, role]) => {
     await nextTick();
-    if (id && show && role === "user") {
+    if (id && show && role === "view") {
       doc.value = null;
       fetchDetail();
     }
@@ -80,8 +83,9 @@ watch(
       <div
         v-if="
           drawer.showDrawer &&
-          drawer.drawerRole === 'user' &&
-          drawer.docRequestId
+          drawer.drawerRole === 'view' &&
+          drawer.docRequestId &&
+          drawer.docStatus !== 'reject'
         "
         class="uv-overlay"
         @click.self="drawer.closeDrawer()"
@@ -294,7 +298,7 @@ watch(
                             class="uv-no-attach"
                             >ไม่มีไฟล์แนบ</span
                           >
-                          
+
                         </div>
                       </div>
                     </div>
