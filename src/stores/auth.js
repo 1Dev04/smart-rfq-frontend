@@ -70,6 +70,13 @@ export const useAuthStore = defineStore("auth", () => {
         skipAuthRedirect: true,
       });
       if (!res.ok) {
+        // token ไม่มี/ใช้ไม่ได้แล้ว → เคลียร์ session เก่าทิ้ง กัน UI ค้างแสดงว่า "ล็อกอินอยู่" ทั้งที่ใช้งานจริงไม่ได้
+        authRole.value = null;
+        user.value = null;
+        token.value = null;
+        localStorage.removeItem("rfq_auth_role");
+        localStorage.removeItem("rfq_auth_user");
+        localStorage.removeItem("rfq_auth_token");
         return null;
       }
       const data = await res.json();
