@@ -30,7 +30,10 @@ const allSteps = [
 function stepStatus(stepId) {
   if (!doc.value) return "pending";
   const order = allSteps.map((s) => s.id);
-  const raw = (doc.value.status ?? doc.value.Status ?? "").toString().trim().toLowerCase();
+  const raw = (doc.value.status ?? doc.value.Status ?? "")
+    .toString()
+    .trim()
+    .toLowerCase();
   const cur = order.indexOf(raw);
   const idx = order.indexOf(stepId);
   if (cur === -1) return "pending";
@@ -43,7 +46,9 @@ async function fetchDetail() {
   if (!drawer.docRequestId) return;
   isLoading.value = true;
   try {
-    const res = await apiFetch(`${BASE}/api/doc-request/${drawer.docRequestId}`);
+    const res = await apiFetch(
+      `${BASE}/api/doc-request/${drawer.docRequestId}`,
+    );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     doc.value = await res.json();
     initFinalInputs();
@@ -100,6 +105,41 @@ function priceDiffers(item) {
   return Number(input.finalPrice) !== Number(sel.price);
 }
 
+// ── Auto Discount Sync ─────────────
+function calcPriceFromDiscount(item) {
+  const sel = selectedVendorOf(item);
+  const input = finalInputs.value[item.id];
+  if (!sel || sel.price == null) return;
+
+  const basePrice = Number(sel.price);
+  const discount = Number(input.finalDiscount);
+
+  if (
+    input.finalDiscount === "" ||
+    input.finalDiscount == null ||
+    isNaN(discount)
+  )
+    return;
+
+  const result = basePrice - (basePrice * discount) / 100;
+  input.finalPrice = Math.round(result * 100) / 100;
+}
+
+function calcDiscountFromPrice(item) {
+  const sel = selectedVendorOf(item);
+  const input = finalInputs.value[item.id];
+  if (!sel || sel.price == null || Number(sel.price) === 0) return;
+
+  const basePrice = Number(sel.price);
+  const finalPrice = Number(input.finalPrice);
+
+  if (input.finalPrice === "" || input.finalPrice == null || isNaN(finalPrice))
+    return;
+
+  const result = ((basePrice - finalPrice) / basePrice) * 100;
+  input.finalDiscount = Math.round(result * 100) / 100;
+}
+
 function onFinalFileChange(event, itemId) {
   const file = event.target.files[0] ?? null;
   if (finalInputs.value[itemId]) finalInputs.value[itemId].newFile = file;
@@ -145,7 +185,7 @@ async function saveCostSavingItem(item) {
   }
 }
 
-// Validate Aleady Selected Vendor for Each Item and Reason 
+// Validate Aleady Selected Vendor for Each Item and Reason
 function validateAllItemsReady() {
   if (!doc.value?.items?.length) return false;
 
@@ -167,7 +207,8 @@ function validateAllItemsReady() {
       toast.add({
         severity: "warn",
         summary: "กรุณากรอกเหตุผล",
-        detail: "ราคาสุดท้ายไม่ตรงกับราคาที่ User เลือกไว้ ต้องกรอกในช่อง Reasons choices differ",
+        detail:
+          "ราคาสุดท้ายไม่ตรงกับราคาที่ User เลือกไว้ ต้องกรอกในช่อง Reasons choices differ",
         life: 4500,
       });
       return false;
@@ -189,7 +230,7 @@ async function confirmCostSaving() {
     for (const item of doc.value.items) {
       const ok = await saveCostSavingItem(item);
       if (!ok) {
-        // เซฟไม่ผ่าน หยุดทันที 
+        // เซฟไม่ผ่าน หยุดทันที
         return;
       }
     }
@@ -289,7 +330,10 @@ function closeDrawer() {
             <div class="cs-pipeline">
               <div class="cs-pipeline-track">
                 <template v-for="(step, i) in allSteps" :key="step.id">
-                  <div class="cs-step" :class="`cs-step--${stepStatus(step.id)}`">
+                  <div
+                    class="cs-step"
+                    :class="`cs-step--${stepStatus(step.id)}`"
+                  >
                     <div class="cs-node">
                       <svg
                         v-if="stepStatus(step.id) === 'done'"
@@ -305,7 +349,10 @@ function closeDrawer() {
                           stroke-linecap="round"
                         />
                       </svg>
-                      <span v-else-if="stepStatus(step.id) === 'active'" class="cs-pulse" />
+                      <span
+                        v-else-if="stepStatus(step.id) === 'active'"
+                        class="cs-pulse"
+                      />
                       <span v-else class="cs-num">{{ i + 1 }}</span>
                     </div>
                     <span class="cs-step-label">{{ step.label }}</span>
@@ -313,7 +360,9 @@ function closeDrawer() {
                   <div
                     v-if="i < allSteps.length - 1"
                     class="cs-arrow"
-                    :class="{ 'cs-arrow--done': stepStatus(step.id) === 'done' }"
+                    :class="{
+                      'cs-arrow--done': stepStatus(step.id) === 'done',
+                    }"
                   >
                     <svg width="14" height="10" viewBox="0 0 16 12" fill="none">
                       <path
@@ -349,7 +398,11 @@ function closeDrawer() {
                 </div>
 
                 <!-- Items -->
-                <div v-for="(item, index) in doc.items" :key="item.id" class="cs-item">
+                <div
+                  v-for="(item, index) in doc.items"
+                  :key="item.id"
+                  class="cs-item"
+                >
                   <div class="cs-item-header">
                     <span class="cs-item-label">
                       <svg
@@ -375,7 +428,9 @@ function closeDrawer() {
                       <div class="cs-row">
                         <div class="cs-field">
                           <label>Target PUR Reply</label>
-                          <div class="cs-view">{{ item.targetPURreply ?? "-" }}</div>
+                          <div class="cs-view">
+                            {{ item.targetPURreply ?? "-" }}
+                          </div>
                         </div>
                         <div class="cs-field">
                           <label>GL Code</label>
@@ -392,7 +447,9 @@ function closeDrawer() {
                       </div>
                       <div class="cs-field">
                         <label>Item Description</label>
-                        <div class="cs-view">{{ item.itemDescription ?? "-" }}</div>
+                        <div class="cs-view">
+                          {{ item.itemDescription ?? "-" }}
+                        </div>
                       </div>
                     </div>
 
@@ -407,12 +464,16 @@ function closeDrawer() {
                         </div>
                         <div class="cs-field">
                           <label>Spec / Purity</label>
-                          <div class="cs-view">{{ item.specPurity ?? "-" }}</div>
+                          <div class="cs-view">
+                            {{ item.specPurity ?? "-" }}
+                          </div>
                         </div>
                       </div>
                       <div class="cs-field">
                         <label>Cylinder Type</label>
-                        <div class="cs-view">{{ item.cylinderType ?? "-" }}</div>
+                        <div class="cs-view">
+                          {{ item.cylinderType ?? "-" }}
+                        </div>
                       </div>
                       <div class="cs-row">
                         <div class="cs-field">
@@ -433,8 +494,12 @@ function closeDrawer() {
                       <thead>
                         <tr>
                           <th class="cs-th-detail">Detail</th>
-                          <th class="cs-th-first">Vendor Selected First Price</th>
-                          <th class="cs-th-final">Vendor Selected Final Price</th>
+                          <th class="cs-th-first">
+                            Vendor Selected First Price
+                          </th>
+                          <th class="cs-th-final">
+                            Vendor Selected Final Price
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -491,6 +556,7 @@ function closeDrawer() {
                               step="0.01"
                               class="cs-input"
                               placeholder="0.00"
+                              @input="calcDiscountFromPrice(item)"
                             />
                           </td>
                         </tr>
@@ -500,13 +566,17 @@ function closeDrawer() {
                             {{ selectedVendorOf(item).discount ?? "-" }}
                           </td>
                           <td class="cs-td-editable">
-                            <input
-                              v-model="finalInputs[item.id].finalDiscount"
-                              type="number"
-                              step="0.01"
-                              class="cs-input"
-                              placeholder="0.00"
-                            />
+                            <div class="cs-input-unit">
+                              <input
+                                v-model="finalInputs[item.id].finalDiscount"
+                                type="number"
+                                step="0.01"
+                                class="cs-input"
+                                placeholder="0.00"
+                                @input="calcPriceFromDiscount(item)"
+                              />
+                              <span class="cs-input-suffix">%</span>
+                            </div>
                           </td>
                         </tr>
                         <tr>
@@ -526,7 +596,10 @@ function closeDrawer() {
                           <td class="cs-td-editable">
                             <label class="cs-file-btn">
                               <i class="pi pi-upload"></i>
-                              {{ finalInputs[item.id]?.newFile?.name || "แนบไฟล์ใหม่" }}
+                              {{
+                                finalInputs[item.id]?.newFile?.name ||
+                                "แนบไฟล์ใหม่"
+                              }}
                               <input
                                 type="file"
                                 class="cs-file-hidden"
@@ -548,7 +621,8 @@ function closeDrawer() {
                               class="cs-input"
                               :class="{
                                 'cs-input--required':
-                                  priceDiffers(item) && !finalInputs[item.id]?.reason?.trim(),
+                                  priceDiffers(item) &&
+                                  !finalInputs[item.id]?.reason?.trim(),
                               }"
                               :placeholder="
                                 priceDiffers(item)
@@ -563,17 +637,22 @@ function closeDrawer() {
 
                     <div v-else class="cs-empty">
                       <i class="pi pi-exclamation-triangle"></i>
-                      Item นี้ยังไม่มี Vendor ที่ User เลือกไว้ (ยังไม่ผ่านขั้น User Confirm)
+                      Item นี้ยังไม่มี Vendor ที่ User เลือกไว้ (ยังไม่ผ่านขั้น
+                      User Confirm)
                     </div>
                   </div>
 
                   <p v-if="priceDiffers(item)" class="cs-differ-hint">
                     <i class="pi pi-exclamation-triangle"></i>
-                    ราคาสุดท้ายไม่ตรงกับราคาที่ User เลือกไว้ — ต้องกรอกเหตุผลในช่อง
-                    "Reasons choices differ" ก่อนจึงจะยืนยันได้
+                    ราคาสุดท้ายไม่ตรงกับราคาที่ User เลือกไว้ —
+                    ต้องกรอกเหตุผลในช่อง "Reasons choices differ"
+                    ก่อนจึงจะยืนยันได้
                   </p>
 
-                  <div v-if="index < doc.items.length - 1" class="cs-item-divider"></div>
+                  <div
+                    v-if="index < doc.items.length - 1"
+                    class="cs-item-divider"
+                  ></div>
                 </div>
               </template>
             </div>
@@ -582,7 +661,11 @@ function closeDrawer() {
             <div class="cs-footer">
               <span class="cs-role-badge">🏢 Cost Saving</span>
               <div class="cs-footer-actions">
-                <button class="cs-btn cs-btn--ghost" :disabled="isSavingCost" @click="closeDrawer">
+                <button
+                  class="cs-btn cs-btn--ghost"
+                  :disabled="isSavingCost"
+                  @click="closeDrawer"
+                >
                   Cancel
                 </button>
                 <button
@@ -590,7 +673,11 @@ function closeDrawer() {
                   :disabled="isBacking || isSavingCost || isConfirming"
                   @click="backToCompare"
                 >
-                  <i :class="isBacking ? 'pi pi-spin pi-spinner' : 'pi pi-arrow-left'"></i>
+                  <i
+                    :class="
+                      isBacking ? 'pi pi-spin pi-spinner' : 'pi pi-arrow-left'
+                    "
+                  ></i>
                   Back Compare
                 </button>
                 <button
@@ -656,23 +743,48 @@ function closeDrawer() {
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(5px);
 }
-.cs-fade-enter-active { transition: opacity 0.25s ease; }
-.cs-fade-leave-active { transition: opacity 0.28s ease; }
-.cs-fade-enter-from, .cs-fade-leave-to { opacity: 0; }
-.cs-slide-enter-active { animation: csSlideIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.cs-slide-leave-active { animation: csSlideOut 0.28s cubic-bezier(0.4, 0, 1, 1) both; }
+.cs-fade-enter-active {
+  transition: opacity 0.25s ease;
+}
+.cs-fade-leave-active {
+  transition: opacity 0.28s ease;
+}
+.cs-fade-enter-from,
+.cs-fade-leave-to {
+  opacity: 0;
+}
+.cs-slide-enter-active {
+  animation: csSlideIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.cs-slide-leave-active {
+  animation: csSlideOut 0.28s cubic-bezier(0.4, 0, 1, 1) both;
+}
 @keyframes csSlideIn {
-  from { transform: translateX(100%); opacity: 0.6; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 @keyframes csSlideOut {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(100%); opacity: 0; }
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
 
 .cs-panel {
   position: fixed;
-  top: 0; right: 0; bottom: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100dvh;
   display: flex;
@@ -685,163 +797,531 @@ function closeDrawer() {
 }
 
 .cs-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 24px; border-bottom: 1px solid var(--border-subtle);
-  flex-shrink: 0; background: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  background: var(--bg-surface);
 }
-.cs-header-left { display: flex; align-items: center; gap: 12px; }
+.cs-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .cs-badge {
-  width: 38px; height: 38px; border-radius: 10px;
-  background: var(--accent-dim, rgba(56,163,245,0.15));
-  border: 1px solid var(--accent-glow, rgba(56,163,245,0.25));
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--accent-dim, rgba(56, 163, 245, 0.15));
+  border: 1px solid var(--accent-glow, rgba(56, 163, 245, 0.25));
   color: var(--accent, #38a3f5);
-  display: flex; align-items: center; justify-content: center;
-  font-family: "Sora", sans-serif; font-size: 11px; font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Sora", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
 }
-.cs-title { font-family: "Sora", sans-serif; font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; }
-.cs-sub { font-size: 11.5px; color: var(--text-muted); }
+.cs-title {
+  font-family: "Sora", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+}
+.cs-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
 .cs-close {
-  width: 34px; height: 34px; border-radius: 8px;
-  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
-  color: var(--text-secondary); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
-.cs-close:hover { background: var(--resent-bg); color: var(--resent); border-color: var(--resent-border); }
+.cs-close:hover {
+  background: var(--resent-bg);
+  color: var(--resent);
+  border-color: var(--resent-border);
+}
 
-.cs-pipeline { padding: 14px 24px; border-bottom: 1px solid var(--border-subtle); flex-shrink: 0; background: var(--bg-surface); overflow-x: auto; }
-.cs-pipeline-track { display: flex; align-items: center; min-width: max-content; }
-.cs-step { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 76px; }
-.cs-node { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
-.cs-step-label { font-size: 9.5px; font-weight: 500; text-align: center; line-height: 1.3; white-space: pre-line; }
-.cs-num { font-size: 11px; font-weight: 700; }
-.cs-step--done .cs-node { background: var(--accept-bg); border: 1.5px solid var(--accept-border); color: var(--accept); }
-.cs-step--done .cs-step-label { color: var(--accept); }
+.cs-pipeline {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  overflow-x: auto;
+}
+.cs-pipeline-track {
+  display: flex;
+  align-items: center;
+  min-width: max-content;
+}
+.cs-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 76px;
+}
+.cs-node {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cs-step-label {
+  font-size: 9.5px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.3;
+  white-space: pre-line;
+}
+.cs-num {
+  font-size: 11px;
+  font-weight: 700;
+}
+.cs-step--done .cs-node {
+  background: var(--accept-bg);
+  border: 1.5px solid var(--accept-border);
+  color: var(--accept);
+}
+.cs-step--done .cs-step-label {
+  color: var(--accept);
+}
 .cs-step--active .cs-node {
-  background: var(--accent-dim, rgba(56,163,245,0.15));
+  background: var(--accent-dim, rgba(56, 163, 245, 0.15));
   border: 2px solid var(--accent, #38a3f5);
   color: var(--accent, #38a3f5);
-  box-shadow: 0 0 0 4px var(--accent-dim, rgba(56,163,245,0.15));
+  box-shadow: 0 0 0 4px var(--accent-dim, rgba(56, 163, 245, 0.15));
 }
-.cs-step--active .cs-step-label { color: var(--accent, #38a3f5); font-weight: 700; }
-.cs-step--pending .cs-node { background: var(--bg-elevated); border: 1.5px solid var(--border-subtle); color: var(--text-muted); }
-.cs-step--pending .cs-step-label { color: var(--text-muted); }
-.cs-pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent, #38a3f5); animation: csPulse 1.6s ease-in-out infinite; }
+.cs-step--active .cs-step-label {
+  color: var(--accent, #38a3f5);
+  font-weight: 700;
+}
+.cs-step--pending .cs-node {
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+.cs-step--pending .cs-step-label {
+  color: var(--text-muted);
+}
+.cs-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #38a3f5);
+  animation: csPulse 1.6s ease-in-out infinite;
+}
 @keyframes csPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.7; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.7;
+  }
 }
-.cs-arrow { flex: 1; display: flex; align-items: flex-start; padding-top: 6px; color: var(--border-subtle); min-width: 18px; justify-content: center; }
-.cs-arrow--done { color: var(--accept-border); }
+.cs-arrow {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 6px;
+  color: var(--border-subtle);
+  min-width: 18px;
+  justify-content: center;
+}
+.cs-arrow--done {
+  color: var(--accept-border);
+}
 
-.cs-body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; }
-.cs-loading { display: flex; align-items: center; gap: 10px; justify-content: center; padding: 60px 0; color: var(--text-muted); }
+.cs-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+.cs-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 60px 0;
+  color: var(--text-muted);
+}
 
-.cs-meta { display: flex; gap: 20px; padding: 10px 0 16px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 16px; flex-wrap: wrap; }
-.cs-meta-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
-.cs-meta-item i { color: var(--accent, #38a3f5); }
+.cs-meta {
+  display: flex;
+  gap: 20px;
+  padding: 10px 0 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.cs-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.cs-meta-item i {
+  color: var(--accent, #38a3f5);
+}
 
-.cs-item { margin-bottom: 8px; }
-.cs-item-header { display: flex; align-items: center; padding: 10px 0 12px; margin-bottom: 16px; border-bottom: 1px solid var(--border-accent); }
-.cs-item-label { display: flex; align-items: center; gap: 7px; font-family: "Sora", sans-serif; font-size: 13px; font-weight: 700; color: var(--accent, #38a3f5); }
-.cs-item-divider { height: 1px; background: var(--border-subtle); margin: 24px 0; }
+.cs-item {
+  margin-bottom: 8px;
+}
+.cs-item-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 0 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-accent);
+}
+.cs-item-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: "Sora", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent, #38a3f5);
+}
+.cs-item-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 24px 0;
+}
 
-.cs-grid { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0 20px; margin-bottom: 20px; }
-.cs-divider { background: var(--border-subtle); }
-.cs-col { display: flex; flex-direction: column; gap: 0; }
+.cs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 0 20px;
+  margin-bottom: 20px;
+}
+.cs-divider {
+  background: var(--border-subtle);
+}
+.cs-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
 .cs-col-title {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--accent, #38a3f5); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent, #38a3f5);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
 }
-.cs-field { margin-bottom: 12px; }
-.cs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.cs-field {
+  margin-bottom: 12px;
+}
+.cs-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
 .cs-field label {
-  display: block; font-size: 10.5px; font-weight: 600; color: var(--text-muted);
-  margin-bottom: 5px; letter-spacing: 0.06em; text-transform: uppercase;
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .cs-view {
-  min-height: 37px; display: flex; align-items: center;
-  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
-  border-radius: 8px; color: var(--text-primary); font-size: 13px; padding: 8px 11px;
+  min-height: 37px;
+  display: flex;
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 8px 11px;
 }
 
-.cs-table-wrap { overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px; }
-.cs-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.cs-table th, .cs-table td { padding: 8px 12px; border: 1px solid var(--border-subtle); text-align: left; vertical-align: middle; }
-.cs-table tr > *:first-child { border-left: none; }
-.cs-table tr > *:last-child { border-right: none; }
-.cs-table thead tr > * { border-top: none; }
-.cs-table tbody tr:last-child > * { border-bottom: none; }
-.cs-th-detail { background: var(--bg-elevated); font-weight: 700; color: var(--text-secondary); width: 180px; }
+.cs-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.cs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.cs-table th,
+.cs-table td {
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle);
+  text-align: left;
+  vertical-align: middle;
+}
+.cs-table tr > *:first-child {
+  border-left: none;
+}
+.cs-table tr > *:last-child {
+  border-right: none;
+}
+.cs-table thead tr > * {
+  border-top: none;
+}
+.cs-table tbody tr:last-child > * {
+  border-bottom: none;
+}
+.cs-th-detail {
+  background: var(--bg-elevated);
+  font-weight: 700;
+  color: var(--text-secondary);
+  width: 180px;
+}
 .cs-th-first {
-  background: color-mix(in srgb, var(--bg-elevated) 60%, var(--accent-dim, rgba(56,163,245,0.15)));
-  color: var(--text-secondary); font-weight: 700; text-align: center; min-width: 160px;
+  background: color-mix(
+    in srgb,
+    var(--bg-elevated) 60%,
+    var(--accent-dim, rgba(56, 163, 245, 0.15))
+  );
+  color: var(--text-secondary);
+  font-weight: 700;
+  text-align: center;
+  min-width: 160px;
 }
-.cs-th-final { background: var(--accent-dim, rgba(56,163,245,0.15)); color: var(--accent, #38a3f5); font-weight: 700; text-align: center; min-width: 160px; }
-.cs-td-label { background: var(--bg-elevated); font-weight: 600; color: var(--text-secondary); }
-.cs-td-label--warn { color: var(--resent, #ef4444); }
-.cs-td-readonly { color: var(--text-secondary); background: var(--bg-elevated); }
-.cs-td-editable { background: color-mix(in srgb, var(--accent-dim, rgba(56,163,245,0.15)) 30%, transparent); }
+.cs-th-final {
+  background: var(--accent-dim, rgba(56, 163, 245, 0.15));
+  color: var(--accent, #38a3f5);
+  font-weight: 700;
+  text-align: center;
+  min-width: 160px;
+}
+.cs-td-label {
+  background: var(--bg-elevated);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.cs-td-label--warn {
+  color: var(--resent, #ef4444);
+}
+.cs-td-readonly {
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+}
+.cs-td-editable {
+  background: color-mix(
+    in srgb,
+    var(--accent-dim, rgba(56, 163, 245, 0.15)) 30%,
+    transparent
+  );
+}
 .cs-input {
-  width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-subtle);
-  border-radius: 6px; color: var(--text-primary); padding: 6px 8px; font-size: 12.5px; box-sizing: border-box;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-primary);
+  padding: 6px 8px;
+  font-size: 12.5px;
+  box-sizing: border-box;
 }
-.cs-input:focus { outline: none; border-color: var(--accent, #38a3f5); }
-.cs-input--required { border-color: var(--resent, #ef4444); box-shadow: 0 0 0 2px color-mix(in srgb, var(--resent, #ef4444) 25%, transparent); }
-.cs-file-link { color: var(--accent, #38a3f5); font-size: 11.5px; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px; }
+.cs-input:focus {
+  outline: none;
+  border-color: var(--accent, #38a3f5);
+}
+.cs-input--required {
+  border-color: var(--resent, #ef4444);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--resent, #ef4444) 25%, transparent);
+}
+.cs-file-link {
+  color: var(--accent, #38a3f5);
+  font-size: 11.5px;
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .cs-file-btn {
-  display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 6px;
-  border: 1px dashed var(--border-subtle); font-size: 11.5px; color: var(--text-secondary); cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px dashed var(--border-subtle);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
 }
-.cs-file-hidden { display: none; }
+.cs-file-hidden {
+  display: none;
+}
 .cs-empty {
-  display: flex; align-items: center; gap: 8px; justify-content: center;
-  padding: 24px; color: var(--text-muted); font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 12.5px;
 }
 
 .cs-differ-hint {
-  display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600;
-  color: var(--resent, #ef4444); background: color-mix(in srgb, var(--resent, #ef4444) 12%, transparent);
-  border: 1px dashed var(--resent, #ef4444); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--resent, #ef4444);
+  background: color-mix(in srgb, var(--resent, #ef4444) 12%, transparent);
+  border: 1px dashed var(--resent, #ef4444);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
 }
 
 .cs-footer {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 24px; border-top: 1px solid var(--border-subtle); flex-shrink: 0; background: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  background: var(--bg-surface);
 }
 .cs-role-badge {
-  font-size: 11.5px; font-weight: 600;
-  background: var(--accent-dim, rgba(56,163,245,0.15));
-  border: 1px solid var(--accent-glow, rgba(56,163,245,0.25));
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--accent-dim, rgba(56, 163, 245, 0.15));
+  border: 1px solid var(--accent-glow, rgba(56, 163, 245, 0.25));
   color: var(--accent, #38a3f5);
-  padding: 3px 10px; border-radius: 6px;
+  padding: 3px 10px;
+  border-radius: 6px;
 }
-.cs-footer-actions { display: flex; gap: 8px; }
+.cs-footer-actions {
+  display: flex;
+  gap: 8px;
+}
 .cs-btn {
-  padding: 9px 18px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
-  font-family: "DM Sans", sans-serif; display: flex; align-items: center; gap: 6px;
+  padding: 9px 18px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: "DM Sans", sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.cs-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.cs-btn--ghost { background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); }
-.cs-btn--ghost:hover:not(:disabled) { background: var(--bg-elevated); }
-.cs-btn--outline { background: transparent; border: 1px solid var(--accent-glow, rgba(56,163,245,0.25)); color: var(--accent, #38a3f5); }
-.cs-btn--outline:hover:not(:disabled) { background: var(--accent-dim, rgba(56,163,245,0.12)); }
+.cs-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.cs-btn--ghost {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.cs-btn--ghost:hover:not(:disabled) {
+  background: var(--bg-elevated);
+}
+.cs-btn--outline {
+  background: transparent;
+  border: 1px solid var(--accent-glow, rgba(56, 163, 245, 0.25));
+  color: var(--accent, #38a3f5);
+}
+.cs-btn--outline:hover:not(:disabled) {
+  background: var(--accent-dim, rgba(56, 163, 245, 0.12));
+}
 .cs-btn--primary {
-  font-family: "Sora", sans-serif; font-weight: 700; border: none; color: var(--text-primary-help);
+  font-family: "Sora", sans-serif;
+  font-weight: 700;
+  border: none;
+  color: var(--text-primary-help);
   background: linear-gradient(135deg, var(--orb-1), var(--accent));
-  box-shadow: 0 4px 14px var(--accent-glow, rgba(56,163,245,0.25));
+  box-shadow: 0 4px 14px var(--accent-glow, rgba(56, 163, 245, 0.25));
 }
-.cs-btn--primary:not(:disabled):hover { transform: translateY(-1px); }
+.cs-btn--primary:not(:disabled):hover {
+  transform: translateY(-1px);
+}
 
-.cs-confirm-fade-enter-active { transition: opacity 0.18s ease; }
-.cs-confirm-fade-leave-active { transition: opacity 0.16s ease; }
-.cs-confirm-fade-enter-from, .cs-confirm-fade-leave-to { opacity: 0; }
+.cs-confirm-fade-enter-active {
+  transition: opacity 0.18s ease;
+}
+.cs-confirm-fade-leave-active {
+  transition: opacity 0.16s ease;
+}
+.cs-confirm-fade-enter-from,
+.cs-confirm-fade-leave-to {
+  opacity: 0;
+}
 .cs-confirm-overlay {
-  position: fixed; inset: 0; z-index: 1100; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; padding: 24px;
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 }
 .cs-confirm-box {
-  width: 100%; max-width: 400px; background: var(--bg-surface); border: 1px solid var(--border-subtle);
-  border-radius: 14px; padding: 22px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
-.cs-confirm-msg { font-size: 13.5px; color: var(--text-primary); line-height: 1.5; margin: 0 0 18px; text-align: center; }
-.cs-confirm-actions { display: flex; justify-content: center; gap: 10px; }
+.cs-confirm-msg {
+  font-size: 13.5px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin: 0 0 18px;
+  text-align: center;
+}
+.cs-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.cs-input-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.cs-input-unit .cs-input {
+  padding-right: 26px; /* กันข้อความชนสัญลักษณ์ % */
+}
+.cs-input-suffix {
+  position: absolute;
+  right: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  pointer-events: none; /* คลิกทะลุไปที่ input ได้ */
+}
 </style>

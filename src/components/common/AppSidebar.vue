@@ -29,14 +29,7 @@ const navItems = [
            <line x1="16" y1="17" x2="8" y2="17"/>
            <polyline points="10 9 9 9 8 9"/>`,
   },
-  // {
-  //   to: "/help-category",
-  //   label: "Help Category",
-  //   icon: `<rect x="3" y="3" width="7" height="7"/>
-  //          <rect x="14" y="3" width="7" height="7"/>
-  //          <rect x="14" y="14" width="7" height="7"/>
-  //          <rect x="3" y="14" width="7" height="7"/>`,
-  // },
+
   {
     to: "/audit-log",
     label: "Audit Log",
@@ -45,6 +38,7 @@ const navItems = [
   <circle cx="12" cy="12" r="9"/>
 `,
   },
+  
   {
     to: "/theme",
     label: "Theme",
@@ -56,6 +50,7 @@ const navItems = [
     <circle cx="17.5" cy="11.5" r="1.5"/>
   `,
   },
+
 //   {
 //     to: "/how-to-use",
 //     label: "How To Use",

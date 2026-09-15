@@ -5,6 +5,9 @@ import { useRFQDrawerStore } from "../../stores/rfqDrawer";
 import { apiFetch } from "../../utils/api";
 import html2pdf from "html2pdf.js";
 import ExcelJS from "exceljs";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { SARABUN_REGULAR_BASE64, SARABUN_BOLD_BASE64 } from "../../../assets/fonts/sarabunFont";
 
 const drawer = useRFQDrawerStore();
 const toast = useToast();
@@ -121,23 +124,257 @@ function fmtPercent(n) {
 }
 
 // ── Export PDF: capture ตารางที่กำลังแสดงอยู่ ด้วย html2pdf.js ──
-async function exportPdf() {
-  if (!printAreaRef.value) return;
+// ── PDF Export: วาดตารางจริงด้วย jspdf-autotable (ไม่ใช่ภาพ) ──────────
+const showPdfPreview = ref(false);
+const isGeneratingPreview = ref(false);
+const pdfPreviewUrl = ref(null);
+const pdfOptions = ref({
+  paperSize: "a4",       // "a4" | "a3"
+  orientation: "landscape", // "landscape" | "portrait"
+  fontSize: 9,            // ขนาดฟอนต์ในตาราง
+});
+
+async function fetchLogoDataUrl() {
+  const res = await fetch(LOGO_URL, { mode: "cors" });
+  if (!res.ok) throw new Error("โหลดโลโก้ไม่สำเร็จ");
+  const blob = await res.blob();
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function buildPdfDocument() {
+  const item = currentItem.value;
+  const quotes = currentVendorQuotes.value;
+  const vendorCount = quotes.length;
+
+  const pdfDoc = new jsPDF({
+    orientation: pdfOptions.value.orientation,
+    unit: "mm",
+    format: pdfOptions.value.paperSize,
+  });
+
+    pdfDoc.addFileToVFS("Sarabun-Regular.ttf", SARABUN_REGULAR_BASE64);
+  pdfDoc.addFont("Sarabun-Regular.ttf", "Sarabun", "normal");
+  pdfDoc.addFileToVFS("Sarabun-Bold.ttf", SARABUN_BOLD_BASE64);
+  pdfDoc.addFont("Sarabun-Bold.ttf", "Sarabun", "bold");
+  pdfDoc.setFont("Sarabun", "normal");
+
+
+  const pageWidth = pdfDoc.internal.pageSize.getWidth();
+  const marginX = 12;
+  let logoDataUrl = null;
+  try {
+    logoDataUrl = await fetchLogoDataUrl();
+  } catch (e) {
+    console.warn("โหลดโลโก้ไม่สำเร็จ:", e.message);
+  }
+
+  // ── โลโก้ + Meta info ──
+  if (logoDataUrl) {
+    pdfDoc.addImage(logoDataUrl, "JPEG", marginX, 10, 32, 18);
+  }
+
+  pdfDoc.setFontSize(11);
+  pdfDoc.setFont("Sarabun", "bold");
+  pdfDoc.text("Thai-Japan Gas Co.,Ltd.", marginX + 36, 16);
+  pdfDoc.setFontSize(8);
+  pdfDoc.setFont("Sarabun", "normal");
+  pdfDoc.text(`RFQ Compare — ${doc.value?.rfqNo ?? "-"}`, marginX + 36, 21);
+
+  const metaRight = pageWidth - marginX;
+  const metaLines = [
+    [`RFQ No.`, doc.value?.rfqNo ?? "-"],
+    [`Req date`, doc.value?.createdAt ?? "-"],
+    [`Target PUR reply`, item?.targetPURreply ?? "-"],
+  ];
+  const metaLinesRight = [
+    [`Project Name`, item?.projectName ?? "-"],
+    [`GL Code`, item?.glCode ?? "-"],
+    [`SAP item No.`, item?.sapItem ?? "-"],
+  ];
+
+  pdfDoc.setFontSize(8);
+  let mY = 10;
+  metaLines.forEach(([label, value]) => {
+    pdfDoc.setFont("Sarabun", "bold");
+    pdfDoc.text(`${label}:`, marginX + 90, mY);
+    pdfDoc.setFont("Sarabun", "normal");
+    pdfDoc.text(String(value), marginX + 125, mY);
+    mY += 5;
+  });
+  mY = 10;
+  metaLinesRight.forEach(([label, value]) => {
+    pdfDoc.setFont("Sarabun", "bold");
+    pdfDoc.text(`${label}:`, metaRight - 70, mY);
+    pdfDoc.setFont("Sarabun", "normal");
+    pdfDoc.text(String(value), metaRight - 40, mY);
+    mY += 5;
+  });
+
+  pdfDoc.setDrawColor(43, 87, 154);
+  pdfDoc.setLineWidth(0.6);
+  pdfDoc.line(marginX, 32, pageWidth - marginX, 32);
+
+  // ── หัวตาราง (2 แถว, มี colSpan สำหรับ Compared) ──
+const head = [
+  [
+    {
+      content: "",
+      colSpan: 1 + vendorCount,
+      styles: {
+        lineWidth: 0.1,
+        lineColor: [215, 221, 229],
+        fillColor: [255, 255, 255],
+      },
+    },
+    {
+      content: "Compared (1st vs 2nd)",
+      colSpan: 2,
+      styles: {
+        fillColor: [253, 232, 232],
+        textColor: [180, 35, 24],
+        lineWidth: 0.1,
+        lineColor: [215, 221, 229],
+        halign: "center",
+        valign: "middle",
+      },
+    },
+  ],
+  [
+    "Detail",
+    ...quotes.map((_, vi) => `Vendor ${vi + 1}`),
+    "Per Unit (THB) %",
+    "Amount (THB)",
+  ],
+];
+
+  // ── แถวข้อมูล ──
+  const rows = [
+    ["Item description", ...quotes.map((q) => q.itemDescription || "-"), "", ""],
+    ["Specification / Part no.", ...quotes.map((q) => q.specPartNo || "-"), "", ""],
+    ["Model", ...quotes.map((q) => q.model || "-"), "", ""],
+    ["Picture", ...quotes.map(() => "-"), "", ""],
+    ["Quantity", ...quotes.map(() => String(item?.quantity ?? "-")), "", ""],
+    ["UOM", ...quotes.map(() => item?.uom || "-"), "", ""],
+    [
+      "Price",
+      ...quotes.map((q) => `${fmtTHB(effectivePrice(q))} (THB)`),
+      fmtPercent(compared.value.percent),
+      fmtTHB(compared.value.amount),
+    ],
+    ["Discount", ...quotes.map((q) => fmtTHB(q.finalDiscount ?? q.discount)), "", ""],
+    [
+      "Quotation Files",
+      ...quotes.map((q) =>
+        q.finalQuotationFilePath || q.quotationFilePath ? "มีไฟล์แนบ (ดูในระบบ)" : "-",
+      ),
+      "",
+      "",
+    ],
+    ["Reasons choices differ.", ...quotes.map((q) => q.userDiffReason || "-"), "", ""],
+    ["* Remark Reasons From PUR *", ...quotes.map((q) => q.remark || "-"), "", ""],
+    ["Cost Saving", ...quotes.map((q) => q.costSavingReason || "-"), "", ""],
+  ];
+
+  const priceRowIndex = 6;
+  const remarkRowIndex = 10;
+
+  autoTable(pdfDoc, {
+    head,
+    body: rows,
+    startY: 36,
+    theme: "grid",
+    styles: {
+      font: "Sarabun",   
+      fontSize: pdfOptions.value.fontSize,
+      cellPadding: 2.2,
+      valign: "middle",
+      overflow: "linebreak",
+      lineWidth: 0.1,     
+      lineColor: [215, 221, 229],
+    },
+    headStyles: {
+      font: "Sarabun",   
+      fillColor: [238, 241, 245],
+      textColor: [58, 69, 83],
+      fontStyle: "bold",
+      halign: "center",
+      lineWidth: 0.1,          
+      lineColor: [215, 221, 229],
+    },
+   columnStyles: {
+    0: { fontStyle: "bold", fillColor: [243, 245, 248], cellWidth: 32 },
+  },
+    // ── ทำซ้ำหัวตารางทุกหน้า + ไม่ตัดกลางแถวเด็ดขาด (ค่า default ของ autotable) ──
+    showHead: "everyPage",
+    didParseCell: (data) => {
+      // ไฮไลต์แถว Price ที่มีค่า Compared
+      if (data.section === "body" && data.row.index === priceRowIndex) {
+        if (data.column.index >= 1 + vendorCount) {
+          data.cell.styles.fillColor = [253, 243, 243];
+          data.cell.styles.textColor = [180, 35, 24];
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.halign = "right";
+        }
+      }
+      // ไฮไลต์ label แถว Remark เป็นสีแดง
+      if (
+        data.section === "body" &&
+        data.row.index === remarkRowIndex &&
+        data.column.index === 0
+      ) {
+        data.cell.styles.textColor = [180, 35, 24];
+      }
+    },
+  });
+
+  return pdfDoc;
+}
+
+async function openPdfPreview() {
+  if (!currentItem.value) return;
+  showPdfPreview.value = true;
+  await refreshPreview();
+}
+
+async function refreshPreview() {
+  isGeneratingPreview.value = true;
+  try {
+    const pdfDoc = await buildPdfDocument();
+    if (pdfPreviewUrl.value) URL.revokeObjectURL(pdfPreviewUrl.value);
+    pdfPreviewUrl.value = pdfDoc.output("bloburl");
+  } catch (err) {
+    toast.add({
+      severity: "error",
+      summary: "สร้างตัวอย่างไม่สำเร็จ",
+      detail: err.message,
+      life: 4000,
+    });
+  } finally {
+    isGeneratingPreview.value = false;
+  }
+}
+
+function closePdfPreview() {
+  showPdfPreview.value = false;
+  if (pdfPreviewUrl.value) {
+    URL.revokeObjectURL(pdfPreviewUrl.value);
+    pdfPreviewUrl.value = null;
+  }
+}
+
+async function confirmExportPdf() {
   isExportingPdf.value = true;
   try {
-    await nextTick();
-    await html2pdf()
-      .set({
-        margin: 10,
-        filename: `${doc.value?.rfqNo ?? "RFQ"}_Compare_Item${
-          activeItemIndex.value + 1
-        }.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      })
-      .from(printAreaRef.value)
-      .save();
+    const pdfDoc = await buildPdfDocument();
+    pdfDoc.save(
+      `${doc.value?.rfqNo ?? "RFQ"}_Compare_Item${activeItemIndex.value + 1}.pdf`,
+    );
+    closePdfPreview();
   } catch (err) {
     toast.add({
       severity: "error",
@@ -149,7 +386,6 @@ async function exportPdf() {
     isExportingPdf.value = false;
   }
 }
-
 // ── Export Excel: สร้าง workbook จากทุก Item พร้อมคอลัมน์ Compared ──
 
 // Load logo 
@@ -758,7 +994,7 @@ function closeDrawer() {
                 <button
                   class="fin-btn fin-btn--secondary"
                   :disabled="isExportingPdf"
-                  @click="exportPdf"
+                  @click="openPdfPreview"
                 >
                   <i
                     :class="
@@ -792,6 +1028,72 @@ function closeDrawer() {
       </div>
     </Transition>
   </Teleport>
+
+  <!-- ══ PDF PREVIEW / CUSTOMIZE MODAL ══════════════════════════ -->
+<Teleport to="body">
+  <Transition name="pdfprev-fade">
+    <div v-if="showPdfPreview" class="pdfprev-overlay" @click.self="closePdfPreview">
+      <div class="pdfprev-panel" role="dialog" aria-modal="true">
+        <div class="pdfprev-header">
+          <h3 class="pdfprev-title">ตัวอย่างก่อนดาวน์โหลด PDF</h3>
+          <button class="pdfprev-close" @click="closePdfPreview">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <div class="pdfprev-body">
+          <div class="pdfprev-options">
+            <label class="pdfprev-field">
+              <span>ขนาดกระดาษ</span>
+              <select v-model="pdfOptions.paperSize" @change="refreshPreview">
+                <option value="a4">A4</option>
+                <option value="a3">A3 (ใหญ่กว่า)</option>
+              </select>
+            </label>
+            <label class="pdfprev-field">
+              <span>แนวกระดาษ</span>
+              <select v-model="pdfOptions.orientation" @change="refreshPreview">
+                <option value="landscape">แนวนอน</option>
+                <option value="portrait">แนวตั้ง</option>
+              </select>
+            </label>
+            <label class="pdfprev-field">
+              <span>ขนาดฟอนต์</span>
+              <select v-model.number="pdfOptions.fontSize" @change="refreshPreview">
+                <option :value="7">เล็ก</option>
+                <option :value="9">ปกติ</option>
+                <option :value="11">ใหญ่</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="pdfprev-preview">
+            <div v-if="isGeneratingPreview" class="pdfprev-loading">
+              <i class="pi pi-spin pi-spinner"></i> กำลังสร้างตัวอย่าง...
+            </div>
+            <iframe
+              v-show="!isGeneratingPreview && pdfPreviewUrl"
+              :src="pdfPreviewUrl"
+              class="pdfprev-iframe"
+            ></iframe>
+          </div>
+        </div>
+
+        <div class="pdfprev-footer">
+          <button class="fin-btn fin-btn--ghost" @click="closePdfPreview">ยกเลิก</button>
+          <button
+            class="fin-btn fin-btn--primary"
+            :disabled="isExportingPdf"
+            @click="confirmExportPdf"
+          >
+            <i :class="isExportingPdf ? 'pi pi-spin pi-spinner' : 'pi pi-download'"></i>
+            {{ isExportingPdf ? "กำลังดาวน์โหลด..." : "ดาวน์โหลด PDF" }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+</Teleport>
 </template>
 
 <style scoped>
@@ -1147,4 +1449,153 @@ function closeDrawer() {
   box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
 }
 .fin-btn--primary:not(:disabled):hover { transform: translateY(-1px); }
+
+/* ══ PDF Preview Modal ══ */
+.pdfprev-fade-enter-active { transition: opacity 0.2s ease; }
+.pdfprev-fade-leave-active { transition: opacity 0.18s ease; }
+.pdfprev-fade-enter-from,
+.pdfprev-fade-leave-to { opacity: 0; }
+
+.pdfprev-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.pdfprev-panel {
+  width: 100%;
+  max-width: 920px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  font-family: "DM Sans", sans-serif;
+  overflow: hidden;
+}
+.pdfprev-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.pdfprev-title {
+  font-family: "Sora", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.pdfprev-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;  
+  justify-content: center;
+  
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.pdfprev-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pdfprev-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+.pdfprev-iframe {
+  width: 100%;
+  height: 560px;
+  border: none;
+}
+.pdfprev-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.pdfprev-field input,
+.pdfprev-field select {
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-family: "DM Sans", sans-serif;
+  min-width: 140px;
+}
+.pdfprev-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-glow);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: "DM Sans", sans-serif;
+}
+.pdfprev-refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pdfprev-preview {
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: #525659;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+}
+.pdfprev-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+.pdfprev-img {
+  max-width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+}
+
+.pdfprev-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+}
 </style>
+

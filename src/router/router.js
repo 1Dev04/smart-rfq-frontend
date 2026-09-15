@@ -20,12 +20,7 @@ const routes = [
     component: () => import("../views/rfq/DocReqDashboard.vue"),
     meta: { requiresAuth: true, role: "user" },
   },
-  {
-    path: "/help-category",
-    name: "Help Category",
-    component: () => import("../views/rfq/HelpCategory.vue"),
-    meta: { requiresAuth: true, role: "user" },
-  },
+ 
   {
     path: "/audit-log",
     name: "Audit Log",
@@ -38,12 +33,12 @@ const routes = [
     component: () => import("../views/rfq/Theme.vue"),
     meta: { requiresAuth: true, role: "user" },
   },
-  {
-    path: "/how-to-use",
-    name: "How To Use",
-    component: () => import("../views/rfq/HowToUse.vue"),
-    meta: { requiresAuth: true, role: "user" },
-  },
+  // {
+  //   path: "/how-to-use",
+  //   name: "How To Use",
+  //   component: () => import("../views/rfq/HowToUse.vue"),
+  //   meta: { requiresAuth: true, role: "user" },
+  // },
   
   {
     path: "/admin",

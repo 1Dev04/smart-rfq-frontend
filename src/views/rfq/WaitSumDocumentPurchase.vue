@@ -182,7 +182,10 @@ function fieldsOfGroup(g) {
 function stepStatus(stepId) {
   if (!doc.value) return "pending";
   const order = allSteps.map((s) => s.id);
-  const raw = (doc.value.status ?? doc.value.Status ?? "").toString().trim().toLowerCase();
+  const raw = (doc.value.status ?? doc.value.Status ?? "")
+    .toString()
+    .trim()
+    .toLowerCase();
   const effectiveStatus = raw === "reject" ? "user_pending" : raw;
   const cur = order.indexOf(effectiveStatus);
   const idx = order.indexOf(stepId);
@@ -219,7 +222,7 @@ async function fetchDetail() {
 function seedVendorEmails() {
   const seeded = {};
   (doc.value?.items || []).forEach((item) => {
-    seeded[item.id] = [""];
+    seeded[item.id] = [{ vendorName: "", email: "" }];
   });
   vendorEmails.value = seeded;
 }
@@ -245,8 +248,11 @@ watch(
 
 // ── Board Summary: vendor email management ─────────────────────────────────
 function addEmailField(itemId) {
-  const list = vendorEmails.value[itemId] || [""];
-  vendorEmails.value = { ...vendorEmails.value, [itemId]: [...list, ""] };
+  const list = vendorEmails.value[itemId] || [{ vendorName: "", email: "" }];
+  vendorEmails.value = {
+    ...vendorEmails.value,
+    [itemId]: [...list, { vendorName: "", email: "" }],
+  };
 }
 
 function removeEmailField(itemId, idx) {
@@ -262,11 +268,15 @@ function collectEmailPayload() {
   return (doc.value?.items || [])
     .map((item) => ({
       itemId: item.id,
-      emails: (vendorEmails.value[item.id] || [])
-        .map((e) => e.trim())
-        .filter(Boolean),
+      printedPdfUrl: itemPdfUrls.value[item.id] || null,
+      recipients: (vendorEmails.value[item.id] || [])
+        .map((v) => ({
+          vendorName: (v.vendorName || "").trim(),
+          email: (v.email || "").trim(),
+        }))
+        .filter((v) => v.email),
     }))
-    .filter((row) => row.emails.length > 0);
+    .filter((row) => row.recipients.length > 0);
 }
 
 function requestSend() {
@@ -284,12 +294,11 @@ function requestSend() {
 }
 
 function resetForm() {
-   seedVendorEmails();
+  seedVendorEmails();
 }
 
 function cancelSend() {
   showSendConfirm.value = false;
-
 }
 
 async function generateAndUploadItemPdf(item) {
@@ -393,11 +402,11 @@ async function handleCompare() {
   try {
     const res = await apiFetch(
       `${BASE}/api/doc-request/${drawer.docRequestId}/start-compare`,
-      { 
+      {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ items: doc.value.items.map(i => i.id) })
-      }
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: doc.value.items.map((i) => i.id) }),
+      },
     );
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -412,7 +421,7 @@ async function handleCompare() {
     const id = drawer.docRequestId;
     drawer.closeDrawer();
     await nextTick();
-    drawer.openDrawer("compare", null, id, "purchase_compare")
+    drawer.openDrawer("compare", null, id, "purchase_compare");
   } catch (err) {
     toast.add({
       severity: "error",
@@ -422,7 +431,6 @@ async function handleCompare() {
     });
   }
 }
-
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function today() {
@@ -952,33 +960,8 @@ const HIGHLIGHT_KEYS = ["leadTimeDays", "targetPURreply"];
                   </div>
                 </div>
 
-                <!-- Attachment pages เฉพาะของ item นี้เท่านั้น -->
-                <div
-                  v-for="f in attachLinks(item)"
-                  :key="`att-${item.id}-${f.label}`"
-                  class="pdf-attach-page"
-                >
-                  <div class="pdf-attach-page-header">
-                    <span class="pdf-attach-page-cat">{{ f.label }}</span>
-                    <span class="pdf-attach-page-meta"
-                      >{{ doc.rfqNo }} · Item</span
-                    >
-                  </div>
-                  <div class="pdf-attach-page-body">
-                    <img
-                      v-if="isImageFile(f.href)"
-                      :src="f.href"
-                      class="pdf-attach-page-img"
-                      :alt="f.label"
-                      crossorigin="anonymous"
-                    />
-                    <div v-else class="pdf-attach-page-fallback">
-                      <a :href="f.href" class="pdf-attach-tag"
-                        >{{ f.label }} — เปิดไฟล์</a
-                      >
-                    </div>
-                  </div>
-                </div>
+               
+                
 
                 <div class="pdf-footer">
                   <div class="pdf-footer-left">
@@ -1064,12 +1047,21 @@ const HIGHLIGHT_KEYS = ["leadTimeDays", "targetPURreply"];
                 </span>
                 <div class="board-email-list">
                   <div
-                    v-for="(email, ei) in vendorEmails[item.id] || ['']"
+                    v-for="(entry, ei) in vendorEmails[item.id] || [
+                      { vendorName: '', email: '' },
+                    ]"
                     :key="ei"
                     class="board-email-row"
                   >
                     <input
-                      v-model="vendorEmails[item.id][ei]"
+                      v-model="vendorEmails[item.id][ei].vendorName"
+                      type="text"
+                      class="board-vendor-input"
+                      placeholder="ชื่อ Vendor"
+                      autocomplete="off"
+                    />
+                    <input
+                      v-model="vendorEmails[item.id][ei].email"
                       type="email"
                       class="board-email-input"
                       placeholder="vendor@example.com"
@@ -1090,7 +1082,7 @@ const HIGHLIGHT_KEYS = ["leadTimeDays", "targetPURreply"];
                   <button
                     class="board-email-add"
                     @click="addEmailField(item.id)"
-                    title="เพิ่ม Email"
+                    title="เพิ่ม Vendor"
                   >
                     <i class="pi pi-plus"></i>
                   </button>
@@ -2448,5 +2440,23 @@ const HIGHLIGHT_KEYS = ["leadTimeDays", "targetPURreply"];
   left: -99999px;
   top: 0;
   width: 210mm;
+}
+
+.board-vendor-input {
+  flex: 0.85;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-family: "DM Sans", sans-serif;
+}
+.board-vendor-input:focus {
+  outline: none;
+  border-color: var(--accent-glow);
+}
+.board-email-input {
+  flex: 1.15;
 }
 </style>

@@ -9,6 +9,7 @@ const STATUS_LABEL = {
   finish: "Finish",
   reject: "Reject",
   cancel: "Cancel",
+  error: "Error"
 };
 
 const STATUS_BADGE_CLASS = {
@@ -21,6 +22,7 @@ const STATUS_BADGE_CLASS = {
   purchase_confirm: "badge-purchase-confirm",
   finish: "badge-finish",
   reject: "badge-reject",
+  error: "badge-error",
   cancel: "badge-cancel",
 };
 
@@ -36,6 +38,7 @@ const STATUS_OPTIONS = [
   { label: "Finish", value: "finish" },
   { label: "Reject", value: "reject" },
   { label: "Cancel", value: "cancel" },
+  { label: "Error", value: "error" },
 ];
 
 export default { STATUS_LABEL, STATUS_BADGE_CLASS, STATUS_OPTIONS };
