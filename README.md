@@ -14,7 +14,7 @@
     - Authentication: OAuth 2.0 Middleware
 ## Cloud Storage & Databases
     - File/Image Storage: Cloudinary
-    - Database: Neon (Serverless PostgreSQL)
+    - Database: Neon (Serverless PostgreSQL), SQL Server (Local)
 ## DevOps & Hosting
     - Frontend Hosting: Netlify
     - Backend Hosting: Render
