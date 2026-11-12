@@ -20,6 +20,7 @@
     - Backend Hosting: Render
     - CI/CD Pipeline: Jenkins
 ## AI & LLM Integration
-    - Google AI Studio (Model: Gemini 3.5 Flash-Lite)
+    - Google AI Studio (Model: Gemini 3.5 Flash-Lite) (Testing)
+    - OpenAI API (My plan)
 ## Unstructured Data 
     - Email Parsing & Processing
